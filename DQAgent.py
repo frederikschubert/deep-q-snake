@@ -7,20 +7,17 @@ class DQAgent:
 	def __init__(self):
 		self.actions = ['down', 'right', 'up', 'left', 'nothing']
 		# Metaparameters
-		self.training_freq = 200 # Number of episodes after which to train the model (related to max memory usage, too)
+		self.training_freq = 1024 # Number of experiences after which to train the model
 		self.batch_size = 128
 		# Hyperparameters
-		self.alpha = 0.1 # Learning rate (The Adam optimizer paper suggests 0.001 ad default)
-		self.gamma = 0.9 # Discount factor
+		self.alpha = 0.01 # Learning rate (The Adam optimizer paper suggests 0.001 as default)
+		self.gamma = 0.99 # Discount factor
 		self.epsilon = 1 # Coefficient for epsilon-greedy exploration
 		self.epsilon_rate = 0.99 # (inverse) Rate at which to make epsilon smaller, as training improves the agent's performance; epsilon = epsilon * rate
 		# Experience variables
 		self.experiences = []
-		self.old_state = [] # s
-		self.next_state = [] # s'
-		self.reward = None
-		self.action = None
-		# Q-network, deep convolutional neural network to estimate action-value function
+		self.training_count = 0
+		# Q-network; deep convolutional neural network to estimate action-value function
 		self.DCN = DCNetwork(self.alpha, self.gamma)
 
 	def get_action(self, state):
@@ -49,7 +46,8 @@ class DQAgent:
 
 	def train(self):
 		# Sample a batch from experiences, train the DCN on it, update the epsilon-greedy coefficient
-		print 'Traning agent...'
+		self.training_count += 1
+		print 'Training session #', self.training_count, ' - epsilon:', self.epsilon
 		batch = self.sample_batch()
 		self.DCN.train(batch) # Train the DCN
 		self.epsilon = self.epsilon * self.epsilon_rate # Decrease the probability of picking a random action to improve exploitation

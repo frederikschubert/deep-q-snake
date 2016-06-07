@@ -22,12 +22,13 @@ class DCNetwork:
 		self.model.add(Flatten())
 		self.model.add(Dense(512))
 		#self.model.add(Activation('relu'))
+		self.model.add(Dense(256))
 		self.model.add(Dense(128))
 		#self.model.add(Activation('relu'))
 		self.model.add(Dense(self.nb_actions))
 		#self.model.add(Activation('relu'))
 
-		self.optimizer = RMSprop()
+		self.optimizer = Adam(lr = self.alpha)
 		self.model.compile(loss = 'mean_squared_error', optimizer = self.optimizer, metrics = ['accuracy'])
 
 	def train(self, batch):
@@ -35,6 +36,7 @@ class DCNetwork:
 		x_train = []
 		t_train = []
 
+		# Generate training set and targets
 		for datapoint in batch:
 			x_train.append(datapoint['source'])
 
@@ -42,17 +44,14 @@ class DCNetwork:
 			next_state_pred = list(self.predict(datapoint['dest']).squeeze())
 			next_a_idx = np.argmax(next_state_pred)
 			next_a_Q_value = next_state_pred[next_a_idx]
-			#print next_state_pred, next_a_idx, next_a_Q_value
 
 			# Set the target so that error will be 0 on all actions except the one taken
 			t = list(self.predict(datapoint['source'])[0])			
 			t[self.actions.index(datapoint['action'])] = (datapoint['reward'] + self.gamma * next_a_Q_value) if not datapoint['final'] else datapoint['reward']			
 			
-			#print self.predict(datapoint['dest'])
-			print next_state_pred
-			print t , '\n'
 			t_train.append(t)
 
+		print next_state_pred # Print a prediction so to have an idea of the Q-values magnitude
 		x_train = np.asarray(x_train).squeeze()
 		t_train = np.asarray(t_train).squeeze()
 		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=5)
