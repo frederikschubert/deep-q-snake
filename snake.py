@@ -22,6 +22,11 @@ APPLE_REWARD = 100
 DEATH_REWARD = -1000
 LIFE_REWARD = 1
 
+# Argument defined variables
+must_train = False 
+save_path = ''
+load_path = ''
+
 def init_snake():
 	# Restores the game to the intial state. To be used in the main game loop. 
 	
@@ -71,122 +76,122 @@ def screenshot():
 	matrix = np.asarray(img.getdata(), dtype=np.float64).reshape(img.size[0], img.size[1])
 	return matrix
 
-def main(argv):
-	try:
-		opts, args = getopt.getopt(argv, 'ht:sl', ['--help'])
-	except getopt.GetoptError:
+try:
+	opts, args = getopt.getopt(sys.argv[1:], 'hts:l:', ['help', 'train', 'save=', 'load='])
+except getopt.GetoptError:
+	print 'Usage: snake.py [-tsl]'
+	sys.exit(2)
+print opts 
+print args
+for opt, arg in opts:
+	if opt in ('-h', '--help'):
 		print 'Usage: snake.py [-tsl]'
-		sys.exit(2)
-	print opts 
-	print args
-	for opt, arg in opts:
-		if opt in ('-h', '--help'):
-			print 'Usage: snake.py [-tsl]'
-		elif opt in ():
-		elif opt in ():
-		elif opt in ():
+	elif opt in ('-t','--train'):
+		must_train = True
+	elif opt in ('-s', '--save'):
+		save_path = arg
+	elif opt in ('-l', '--load'):
+		load_path = arg
 
-	# Initialize the game variables for the first time
-	xs = [START_Y, START_Y, START_Y, START_Y, START_Y];
-	ys = [START_X + 5*STEP, START_X + 4*STEP, START_X + 3*STEP, START_X + 2*STEP, START_X];
-	dirs = random.choice([0,1,3]);
-	score = 0;
-	must_die = False
-	applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE));
+# Initialize the game variables for the first time
+xs = [START_Y, START_Y, START_Y, START_Y, START_Y];
+ys = [START_X + 5*STEP, START_X + 4*STEP, START_X + 3*STEP, START_X + 2*STEP, START_X];
+dirs = random.choice([0,1,3]);
+score = 0;
+must_die = False
+applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE));
 
-	# Set up the GUI and the game clock
-	pygame.init();
-	s=pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE));
-	pygame.display.set_caption('Snake');
-	appleimage = pygame.Surface((APPLE_SIZE, APPLE_SIZE));
-	appleimage.fill(APPLE_COLOR);
-	img = pygame.Surface((STEP, STEP));
-	img.fill(SNAKE_COLOR);
-	f = pygame.font.SysFont('Arial', STEP);
-	clock = pygame.time.Clock()
+# Set up the GUI and the game clock
+pygame.init();
+s = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE));
+pygame.display.set_caption('Snake');
+appleimage = pygame.Surface((APPLE_SIZE, APPLE_SIZE));
+appleimage.fill(APPLE_COLOR);
+img = pygame.Surface((STEP, STEP));
+img.fill(SNAKE_COLOR);
+f = pygame.font.SysFont('Arial', STEP);
+clock = pygame.time.Clock()
 
-	# Instantiate the agent
-	DQA = DQAgent()
+# Instantiate the agent
+DQA = DQAgent(load_path)
 
-	# First action is set to nothing (the direction is randomly selected anyway)
-	action = 'nothing'
-	# Initialize the states for the first experience
-	state = [screenshot(), screenshot()]
-	next_state = [screenshot(), screenshot()]
+# First action is set to nothing (the direction is randomly selected anyway)
+action = 'nothing'
+# Initialize the states for the first experience
+state = [screenshot(), screenshot()]
+next_state = [screenshot(), screenshot()]
 
-	while True:
-		reward = LIFE_REWARD # Reward for not dying and not eating
-		next_state[0] = state[1]
+while True:
+	reward = LIFE_REWARD # Reward for not dying and not eating
+	next_state[0] = state[1]
 
-		# Execute game tick and poll for system events
-		clock.tick(FPS)
-		for e in pygame.event.get():
-			if e.type == QUIT:
-				sys.exit(0)
+	# Execute game tick and poll for system events
+	clock.tick(FPS)
+	for e in pygame.event.get():
+		if e.type == QUIT:
+			DQA.quit(save_path)
+			sys.exit(0)
 
-		# Change direction according to the action
-		if action == 'up' and dirs != 0: dirs = 2
-		elif action == 'down' and dirs != 2: dirs = 0
-		elif action == 'left' and dirs != 1: dirs = 3
-		elif action == 'right' and dirs != 3: dirs = 1
+	# Change direction according to the action
+	if action == 'up' and dirs != 0: dirs = 2
+	elif action == 'down' and dirs != 2: dirs = 0
+	elif action == 'left' and dirs != 1: dirs = 3
+	elif action == 'right' and dirs != 3: dirs = 1
 
-		# Check if snake hit itself
-		i = len(xs)-1
-		while i >= 2:
-			if collide(xs[0], xs[i], ys[0], ys[i], STEP, STEP, STEP, STEP):
-				must_die = True
-				reward = DEATH_REWARD # Snake hit itself
-			i-= 1
-
-		#  Check if snake ate apple
-		if collide(xs[0], applepos[0], ys[0], applepos[1], STEP, APPLE_SIZE, STEP, APPLE_SIZE):
-			score+=1;
-			reward = APPLE_REWARD
-			xs.append(700);
-			ys.append(700);
-			applepos=(random.randint(0,SCREEN_SIZE - APPLE_SIZE),random.randint(0,SCREEN_SIZE - APPLE_SIZE)) # Snake ate APPLE_SIZE
-
-		# Check if snake collided with walls
-		if xs[0] < 0 or xs[0] > SCREEN_SIZE - APPLE_SIZE * 2 or ys[0] < 0 or ys[0] > SCREEN_SIZE - APPLE_SIZE * 2: 
+	# Check if snake hit itself
+	i = len(xs)-1
+	while i >= 2:
+		if collide(xs[0], xs[i], ys[0], ys[i], STEP, STEP, STEP, STEP):
 			must_die = True
-			reward = DEATH_REWARD # Snake hit wall
+			reward = DEATH_REWARD # Snake hit itself
+		i-= 1
 
-		# Move snake of 1 step in the current direction
-		i = len(xs)-1
-		while i >= 1:
-			xs[i] = xs[i-1];ys[i] = ys[i-1];
-			i -= 1
+	#  Check if snake ate apple
+	if collide(xs[0], applepos[0], ys[0], applepos[1], STEP, APPLE_SIZE, STEP, APPLE_SIZE):
+		score+=1;
+		reward = APPLE_REWARD
+		xs.append(700);
+		ys.append(700);
+		applepos=(random.randint(0,SCREEN_SIZE - APPLE_SIZE),random.randint(0,SCREEN_SIZE - APPLE_SIZE)) # Snake ate APPLE_SIZE
 
-		if dirs==0:ys[0] += STEP
-		elif dirs==1:xs[0] += STEP
-		elif dirs==2:ys[0] -= STEP
-		elif dirs==3:xs[0] -= STEP	
+	# Check if snake collided with walls
+	if xs[0] < 0 or xs[0] > SCREEN_SIZE - APPLE_SIZE * 2 or ys[0] < 0 or ys[0] > SCREEN_SIZE - APPLE_SIZE * 2: 
+		must_die = True
+		reward = DEATH_REWARD # Snake hit wall
 
-		# Redraw game surface
-		s.fill(BACKGROUND_COLOR)	
-		for i in range(0, len(xs)):
-			s.blit(img, (xs[i], ys[i]))
-		s.blit(appleimage, applepos);
-		t=f.render(str(score), True, (0, 0, 0));
-		s.blit(t, (10, 10));
-		pygame.display.update()
-		
-		# Update next state
-		next_state[1] = screenshot()
-		# Add <old_state, a, r, new_state, final> to experiences 
-		DQA.add_experience(np.asarray([state]), str(action), int(reward), np.asarray([next_state]), True if must_die else False)
-		# Change current state
-		state = list(next_state)
-		# Poll the DQAgent to get the next action
-		action = DQA.get_action(np.asarray([state]))
-		# Train the network after a given number of transitions
-		if DQA.must_train():
-			DQA.train()
-		if must_die :
-			die() # Lol
+	# Move snake of 1 step in the current direction
+	i = len(xs)-1
+	while i >= 1:
+		xs[i] = xs[i-1];ys[i] = ys[i-1];
+		i -= 1
 
-if __name__ == "__main__":
-   main(sys.argv[1:])				
+	if dirs==0:ys[0] += STEP
+	elif dirs==1:xs[0] += STEP
+	elif dirs==2:ys[0] -= STEP
+	elif dirs==3:xs[0] -= STEP	
+
+	# Redraw game surface
+	s.fill(BACKGROUND_COLOR)	
+	for i in range(0, len(xs)):
+		s.blit(img, (xs[i], ys[i]))
+	s.blit(appleimage, applepos);
+	t=f.render(str(score), True, (0, 0, 0));
+	s.blit(t, (10, 10));
+	pygame.display.update()
+	
+	# Update next state
+	next_state[1] = screenshot()
+	# Add <old_state, a, r, new_state, final> to experiences 
+	DQA.add_experience(np.asarray([state]), str(action), int(reward), np.asarray([next_state]), True if must_die else False)
+	# Change current state
+	state = list(next_state)
+	# Poll the DQAgent to get the next action
+	action = DQA.get_action(np.asarray([state]))
+	# Train the network after a given number of transitions if the user requested training
+	if DQA.must_train() and must_train:
+		DQA.train()
+	if must_die:
+		die() # Lol				
 					
 			
 

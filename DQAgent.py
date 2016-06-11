@@ -4,7 +4,7 @@ import numpy as np
 
 class DQAgent:
 	
-	def __init__(self):
+	def __init__(self, load_path):
 		self.actions = ['down', 'right', 'up', 'left', 'nothing']
 		# Metaparameters
 		self.training_freq = 1024 # Number of experiences after which to train the model
@@ -18,7 +18,7 @@ class DQAgent:
 		self.experiences = []
 		self.training_count = 0
 		# Q-network; deep convolutional neural network to estimate action-value function
-		self.DCN = DCNetwork(self.alpha, self.gamma)
+		self.DCN = DCNetwork(self.alpha, self.gamma, load_path)
 
 	def get_action(self, state):
 		# Poll DCN for Q-values, return argmax with probability 1-epsilon
@@ -52,6 +52,8 @@ class DQAgent:
 		self.DCN.train(batch) # Train the DCN
 		self.epsilon = self.epsilon * self.epsilon_rate # Decrease the probability of picking a random action to improve exploitation
 
-	def quit(self):
+	def quit(self, save_path):
 		# Stop experiencing episodes, save the DCN, quit
-		self.DCN.save()
+		if save_path != '':
+			self.DCN.save(save_path)
+		

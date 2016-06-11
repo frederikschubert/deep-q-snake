@@ -5,7 +5,7 @@ import numpy as np
 
 class DCNetwork:
 	
-	def __init__(self, alpha, gamma):
+	def __init__(self, alpha, gamma, load_path):
 		self.actions = ['down', 'right', 'up', 'left', 'nothing']
 		self.model = Sequential()
 		self.nb_actions = 5
@@ -29,6 +29,8 @@ class DCNetwork:
 		#self.model.add(Activation('relu'))
 
 		self.optimizer = Adam(lr = self.alpha)
+		if load_path != '':
+			self.load(load_path)
 		self.model.compile(loss = 'mean_squared_error', optimizer = self.optimizer, metrics = ['accuracy'])
 
 	def train(self, batch):
@@ -61,10 +63,12 @@ class DCNetwork:
 		# Feed state into the model, return predicted Q-values
 		return self.model.predict(state, batch_size=1)
 
-	def save(self):
+	def save(self, path):
 		# Save the model and its weights to disk
 		print 'Saving...'
+		self.model.save_weights(path)
 
 	def load(self, path):
 		# Load the model and its weights from path
 		print 'Loading...'
+		self.model.load_weights(path)
