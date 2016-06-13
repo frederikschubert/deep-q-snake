@@ -1,5 +1,6 @@
 from keras.models import Sequential
 from keras.layers import Convolution2D, Dense, Dropout, Activation, Flatten, BatchNormalization
+from keras.callbacks import TensorBoard
 from keras.optimizers import *
 import numpy as np
 
@@ -12,25 +13,29 @@ class DCNetwork:
 		self.gamma = gamma
 		self.alpha = alpha
 		self.dropout_prob = 0.1
+		self.tensorboard = TensorBoard(log_dir='./output', histogram_freq=0, write_graph=True)
 
-		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4), input_shape=(2, 60, 60)))
-		#self.model.add(Activation('relu'))
-		self.model.add(BatchNormalization())
+		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4), input_shape=(2, 84, 84)))
+		self.model.add(Activation('relu'))
 		self.model.add(Convolution2D(64, 4, 4, border_mode='valid', subsample=(2, 2)))
-		#self.model.add(Activation('relu'))
+		self.model.add(Activation('relu'))
+		self.model.add(Convolution2D(64, 3, 3, border_mode='valid', subsample=(1, 1)))
+		self.model.add(Activation('relu'))
 		self.model.add(BatchNormalization())
 		self.model.add(Flatten())
 		self.model.add(Dense(512))
-		#self.model.add(Activation('relu'))
+		self.model.add(Activation('relu'))
 		self.model.add(Dense(256))
+		self.model.add(Activation('relu'))
 		self.model.add(Dense(128))
-		#self.model.add(Activation('relu'))
+		self.model.add(Activation('relu'))
 		self.model.add(Dense(self.nb_actions))
 		#self.model.add(Activation('relu'))
 
-		self.optimizer = Adam(lr = self.alpha)
+		self.optimizer = Adam()
 		if load_path != '':
 			self.load(load_path)
+
 		self.model.compile(loss = 'mean_squared_error', optimizer = self.optimizer, metrics = ['accuracy'])
 
 	def train(self, batch):
@@ -56,7 +61,7 @@ class DCNetwork:
 		print next_state_pred # Print a prediction so to have an idea of the Q-values magnitude
 		x_train = np.asarray(x_train).squeeze()
 		t_train = np.asarray(t_train).squeeze()
-		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=5)
+		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=5, callbacks=[self.tensorboard])
 
 
 	def predict(self, state):

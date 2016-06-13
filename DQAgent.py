@@ -7,13 +7,13 @@ class DQAgent:
 	def __init__(self, load_path):
 		self.actions = ['down', 'right', 'up', 'left', 'nothing']
 		# Metaparameters
-		self.training_freq = 1024 # Number of experiences after which to train the model
-		self.batch_size = 128
+		self.training_freq = 2048 # Number of experiences after which to train the model
+		self.batch_size = 1024
 		# Hyperparameters
 		self.alpha = 0.01 # Learning rate (The Adam optimizer paper suggests 0.001 as default)
 		self.gamma = 0.99 # Discount factor
 		self.epsilon = 1 # Coefficient for epsilon-greedy exploration
-		self.epsilon_rate = 0.99 # (inverse) Rate at which to make epsilon smaller, as training improves the agent's performance; epsilon = epsilon * rate
+		self.epsilon_rate = 0.90 # (inverse) Rate at which to make epsilon smaller, as training improves the agent's performance; epsilon = epsilon * rate
 		# Experience variables
 		self.experiences = []
 		self.training_count = 0

@@ -1,4 +1,5 @@
 import pygame, random, sys, getopt
+import matplotlib.pyplot as p
 from pygame.locals import *
 from pygame.image import *
 from PIL import Image
@@ -6,21 +7,21 @@ import numpy as np
 from DQAgent import DQAgent
 
 # Game constants
-STEP = 10
-APPLE_SIZE = 10
-SCREEN_SIZE = 200
+STEP = 20
+APPLE_SIZE = 20
+SCREEN_SIZE = 300
 START_X = SCREEN_SIZE / 2 - 5 * STEP
 START_Y = SCREEN_SIZE / 2 - STEP
 FPS = 120
-BACKGROUND_COLOR = (255,255,255)
+BACKGROUND_COLOR = (0,0,0)
 SNAKE_COLOR = (255,0,0)
-APPLE_COLOR = (0,0,0)
+APPLE_COLOR = (255,255,255)
 
 # Agent constants
-SCREENSHOT_DIMS = (60, 60)
-APPLE_REWARD = 100
-DEATH_REWARD = -1000
-LIFE_REWARD = 1
+SCREENSHOT_DIMS = (84, 84)
+APPLE_REWARD = 1
+DEATH_REWARD = -10
+LIFE_REWARD = 0.1
 
 # Argument defined variables
 must_train = False 
@@ -62,6 +63,10 @@ def collide(x1, x2, y1, y2, w1, w2, h1, h2):
 		return False
 
 def die():
+	global episode_nb, episode_length, episode_x, episode_y
+	episode_nb += 1
+	episode_lengths.append(episode_length)
+	episode_length = 0
 	pygame.display.update();
 	init_snake()
 
@@ -115,6 +120,14 @@ clock = pygame.time.Clock()
 # Instantiate the agent
 DQA = DQAgent(load_path)
 
+# Statistics
+episode_nb = 0
+episode_length = 0
+episode_lengths = []
+episode_x = []
+episode_y = []
+
+
 # First action is set to nothing (the direction is randomly selected anyway)
 action = 'nothing'
 # Initialize the states for the first experience
@@ -124,12 +137,15 @@ next_state = [screenshot(), screenshot()]
 while True:
 	reward = LIFE_REWARD # Reward for not dying and not eating
 	next_state[0] = state[1]
+	episode_length += 1
 
 	# Execute game tick and poll for system events
 	clock.tick(FPS)
 	for e in pygame.event.get():
 		if e.type == QUIT:
 			DQA.quit(save_path)
+			plot = p.plot(episode_x, episode_y, label='Episode lenght')
+			p.show()
 			sys.exit(0)
 
 	# Change direction according to the action
@@ -189,6 +205,9 @@ while True:
 	action = DQA.get_action(np.asarray([state]))
 	# Train the network after a given number of transitions if the user requested training
 	if DQA.must_train() and must_train:
+		episode_x.append(episode_nb)
+		episode_y.append(np.mean(episode_lengths))
+		episode_lengths = list([])
 		DQA.train()
 	if must_die:
 		die() # Lol				

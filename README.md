@@ -35,6 +35,7 @@ The deep Q-network is structured as follows:
 - **Dense**: linear activation layer which outputs a 1x256 tensor.
 - **Dense**: linear activation layer which outputs a 1x128 tensor.
 - **Dense**: linear activation layer which outputs a 1x5 tensor.
+   
 No pooling layers were used because they are mostly useful to provide translation invariance during the convolution phase. Since in this example the position of the snake is an important piece of information, it's better to only downscale the feature maps during normal convolution.   
 The linear activations used in the fully connected portion of the net are necessary because the network will try to reach both negative numbers (so relu is not a good choice) and numbers which are big in absolute value (so no tanh because it will be rounded to 1.0 annd -1.0 most of the times). I'm still working on a better solution, but for now it should work.    
 
