@@ -1,5 +1,5 @@
 from keras.models import Sequential
-from keras.layers import Convolution2D, Dense, Dropout, Activation, Flatten, BatchNormalization
+from keras.layers import *
 from keras.callbacks import TensorBoard
 from keras.optimizers import *
 import numpy as np

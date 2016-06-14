@@ -7,7 +7,7 @@ class DQAgent:
 	def __init__(self, load_path):
 		self.actions = ['down', 'right', 'up', 'left', 'nothing']
 		# Metaparameters
-		self.training_freq = 2048 # Number of experiences after which to train the model
+		self.training_freq = 1500 # Number of experiences after which to train the model
 		self.batch_size = 1024
 		# Hyperparameters
 		self.alpha = 0.01 # Learning rate (The Adam optimizer paper suggests 0.001 as default)
@@ -50,7 +50,7 @@ class DQAgent:
 		print 'Training session #', self.training_count, ' - epsilon:', self.epsilon
 		batch = self.sample_batch()
 		self.DCN.train(batch) # Train the DCN
-		self.epsilon = self.epsilon * self.epsilon_rate # Decrease the probability of picking a random action to improve exploitation
+		self.epsilon *= self.epsilon_rate  # Decrease the probability of picking a random action to improve exploitation
 
 	def quit(self, save_path):
 		# Stop experiencing episodes, save the DCN, quit
