@@ -55,6 +55,6 @@ When quitting the script by clicking on the close button of the snake window fiv
 Moreover, at every training step the Tensorboard callback will be executed by Keras and the logfile will be saved in the `'./output'` folder.    
 To visualize the latest graphs, simply run:
 ```sh
-python snake.py -h
+tensorboard --logdir='./output'
 ```   
 and navigate to `localhost:6006`.
