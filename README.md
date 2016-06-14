@@ -50,7 +50,8 @@ When quitting the script by clicking on the close button of the snake window fiv
 2. **Average episode length**: how long were the episodes, on average, before the corresponding training step
 3. **Average reward**: how much was the agent rewarded, on average, in the episodes preceding the corresponding training step
 4. **Average score**: how many apples did the snake eat, on average, in the episodes preceding the corresponding training step
-5. **Epsilon**: the value of the epsilon greedy coefficient in the episodes preceding the corresponding training step   
+5. **Epsilon**: the value of the epsilon greedy coefficient in the episodes preceding the corresponding training step    
+
 Moreover, at every training step the Tensorboard callback will be executed by Keras and the logfile will be saved in the `'./output'` folder.    
 To visualize the latest graphs, simply run:
 ```sh
