@@ -50,8 +50,8 @@ class RLplotter:
 
 	def plot(self):
 		p.figure()
-		p.plot(self.x, self.eps_per_step, label = 'Episodes per step')
-		p.ylabel('Episodes per step')
+		p.plot(self.x, self.eps_per_step, label = 'Episodes in step')
+		p.ylabel('Episodes in step')
 		p.xlabel('Step')
 		p.draw()
 

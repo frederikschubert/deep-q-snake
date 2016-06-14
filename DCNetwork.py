@@ -3,6 +3,7 @@ from keras.layers import *
 from keras.callbacks import TensorBoard
 from keras.optimizers import *
 import numpy as np
+import os
 
 class DCNetwork:
 	
@@ -13,7 +14,7 @@ class DCNetwork:
 		self.gamma = gamma
 		self.alpha = alpha
 		self.dropout_prob = 0.1
-		self.tensorboard = TensorBoard(log_dir='./output', histogram_freq=0, write_graph=True)
+		self.tensorboard = TensorBoard(log_dir='./output', histogram_freq=0, write_graph=False)
 
 		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4), input_shape=(2, 84, 84)))
 		self.model.add(Activation('relu'))
@@ -30,11 +31,12 @@ class DCNetwork:
 		self.model.add(Dense(128))
 		self.model.add(Activation('relu'))
 		self.model.add(Dense(self.nb_actions))
-		#self.model.add(Activation('relu'))
 
 		self.optimizer = Adam()
 		if load_path != '':
 			self.load(load_path)
+		if not os.path.exists('./output'):
+			os.makedirs('./output')
 
 		self.model.compile(loss = 'mean_squared_error', optimizer = self.optimizer, metrics = ['accuracy'])
 
