@@ -27,6 +27,7 @@ LIFE_REWARD = 0.1
 must_train = False
 save_path = ''
 load_path = ''
+remaining_iters = -1
 
 # Statistics
 plotter = RLplotter()
@@ -85,7 +86,7 @@ def screenshot():
 
 
 try:
-	opts, args = getopt.getopt(sys.argv[1:], 'hts:l:', ['help', 'train', 'save=', 'load='])
+	opts, args = getopt.getopt(sys.argv[1:], 'hts:l:i:', ['help', 'train', 'save=', 'load=', 'iterations='])
 except getopt.GetoptError:
 	print 'Usage: snake.py [-tsl]'
 	sys.exit(2)
@@ -99,6 +100,8 @@ for opt, arg in opts:
 		save_path = arg
 	elif opt in ('-l', '--load'):
 		load_path = arg
+	elif opt in ('-i', '--iterations'):
+		remaining_iters = int(arg)
 
 # Initialize the game variables for the first time
 xs = [START_Y, START_Y, START_Y, START_Y, START_Y]
@@ -209,7 +212,13 @@ while True:
 	# Train the network after a given number of transitions if the user requested training
 	if DQA.must_train() and must_train:
 		plotter.log(DQA.epsilon)
+		if remaining_iters == 0:
+			DQA.quit(save_path)
+			plotter.plot()
+			sys.exit(0)
 		DQA.train()
+		if remaining_iters != -1:
+			remaining_iters = remaining_iters - 1
 
 	if must_die:
 		die() # Lol

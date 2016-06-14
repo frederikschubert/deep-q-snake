@@ -27,6 +27,7 @@ you'll see the options list. Possible options are:
 - **t, train**: if set, the model will train the deep Q-network periodically during the game. 
 - **s, save path/to/file.h5**: upon exiting, the model will be saved to a HDF5 file.
 - **l, load path/to/file.h5**: initialize the deep Q-network using the weights stored in the given HDF5 file.
+- **i, iterations [num]**: specify after how many training session should the training stop. Defaults to infinite training. 
 
 ### Model description
 The model is composed of a deep convolutional neural network and a classical reinforcement learning agent. The agent uses the network to approximate the environment's action-value function and decides which action to take at each timestep.   
