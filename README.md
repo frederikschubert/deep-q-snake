@@ -56,4 +56,4 @@ To visualize the latest graphs, simply run:
 ```sh
 tensorboard --logdir='./output'
 ```
-and navigate to `localhost:6006`
+and navigate to `localhost:6006`.
