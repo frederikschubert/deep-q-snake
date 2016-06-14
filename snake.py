@@ -15,6 +15,7 @@ FPS = 120
 BACKGROUND_COLOR = (0, 0, 0)
 SNAKE_COLOR = (255, 0, 0)
 APPLE_COLOR = (255, 255, 255)
+ACTIONS = 5
 
 # Agent constants
 SCREENSHOT_DIMS = (84, 84)
@@ -41,7 +42,7 @@ def init_snake():
 	applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE))
 
 	# First action is set to nothing (the direction is randomly selected anyway)
-	action = 'nothing'
+	action = 4 # nothing
 	# Initialize the states for the first experience
 	state = [screenshot(), screenshot()]
 	next_state = [screenshot(), screenshot()]
@@ -119,10 +120,10 @@ f = pygame.font.SysFont('Arial', STEP)
 clock = pygame.time.Clock()
 
 # Instantiate the agent
-DQA = DQAgent(load_path)
+DQA = DQAgent(ACTIONS, load_path)
 
 # First action is set to nothing (the direction is randomly selected anyway)
-action = 'nothing'
+action = 4 # nothing
 # Initialize the states for the first experience
 state = [screenshot(), screenshot()]
 next_state = [screenshot(), screenshot()]

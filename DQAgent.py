@@ -24,7 +24,7 @@ class DQAgent:
 		# Poll DCN for Q-values, return argmax with probability 1-epsilon
 		q_values = self.DCN.predict(state)
 		if random.random() < self.epsilon:
-			return random.randint(0,self.actions)
+			return random.randint(0,self.actions-1)
 		else:
 			return np.argmax(q_values)
 

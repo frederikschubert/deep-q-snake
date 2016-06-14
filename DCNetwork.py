@@ -1,3 +1,4 @@
+import time
 from keras.models import Sequential
 from keras.layers import *
 from keras.callbacks import TensorBoard
@@ -14,7 +15,6 @@ class DCNetwork:
 		self.gamma = gamma
 		self.alpha = alpha
 		self.dropout_prob = 0.1
-		self.tensorboard = TensorBoard(log_dir='./output', histogram_freq=0, write_graph=False)
 
 		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4), input_shape=(2, 84, 84)))
 		self.model.add(Activation('relu'))
@@ -33,10 +33,15 @@ class DCNetwork:
 		self.model.add(Dense(self.actions))
 
 		self.optimizer = Adam()
+
 		if load_path != '':
 			self.load(load_path)
 		if not os.path.exists('./output'):
 			os.makedirs('./output')
+		self.OUT_DIR = ''.join(['./output/', time.strftime('%Y%m%d-%H%M%S/')])
+		if not os.path.exists(self.OUT_DIR):
+			os.makedirs(self.OUT_DIR)
+		self.tensorboard = TensorBoard(log_dir=self.OUT_DIR, histogram_freq=0, write_graph=False)
 
 		self.model.compile(loss = 'mean_squared_error', optimizer = self.optimizer, metrics = ['accuracy'])
 

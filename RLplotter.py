@@ -1,5 +1,6 @@
 import matplotlib.pyplot as p
 import numpy as np
+import os, time
 
 class RLplotter:
 	def __init__(self):
@@ -17,6 +18,12 @@ class RLplotter:
 		self.episode_scores = []
 		self.episode_reward = 0
 		self.episodes_rewards = []
+
+		if not os.path.exists('./output'):
+			os.makedirs('./output')
+		self.OUT_DIR = ''.join(['./output/', time.strftime('%Y%m%d-%H%M%S/')])
+		if not os.path.exists(self.OUT_DIR):
+			os.makedirs(self.OUT_DIR)
 
 
 	def log(self, epsilon):
@@ -50,35 +57,39 @@ class RLplotter:
 
 	def plot(self):
 		p.figure()
-		p.plot(self.x, self.eps_per_step, label = 'Episodes in step')
-		p.ylabel('Episodes in step')
+		step = 'Episodes in step'
+		p.plot(self.x, self.eps_per_step, label =step)
+		p.ylabel(step)
 		p.xlabel('Step')
-		p.draw()
+		p.savefig(self.OUT_DIR + step + '.png')
 
 		p.figure()
-		p.plot(self.x, self.lengths, label = 'Average episode lenght')
-		p.ylabel('Average episode lenght')
+		lenght = 'Average episode lenght'
+		p.plot(self.x, self.lengths, label =lenght)
+		p.ylabel(lenght)
 		p.xlabel('Step')
-		p.draw()
+		p.savefig(self.OUT_DIR + lenght + '.png')
 
 		p.figure()
-		p.plot(self.x, self.rewards, label = 'Average reward')
-		p.ylabel('Average reward')
+		reward = 'Average reward'
+		p.plot(self.x, self.rewards, label =reward)
+		p.ylabel(reward)
 		p.xlabel('Step')
-		p.draw()
+		p.savefig(self.OUT_DIR + reward + '.png')
 
 		p.figure()
-		p.plot(self.x, self.scores, label='Average score')
-		p.ylabel('Average score')
-		p.xlabel('step')
-		p.draw()
+		score = 'Average score'
+		p.plot(self.x, self.scores, label=score)
+		p.ylabel(score)
+		p.xlabel('Step')
+		p.savefig(self.OUT_DIR + score + '.png')
 
 		p.figure()
-		p.plot(self.x, self.epsilons, label='Epsilon')
-		p.ylabel('Epsilon')
+		epsilon = 'Epsilon'
+		p.plot(self.x, self.epsilons, label=epsilon)
+		p.ylabel(epsilon)
 		p.xlabel('Step')
-		p.draw()
+		p.savefig(self.OUT_DIR + epsilon + '.png')
 
-		p.show()
 
 
