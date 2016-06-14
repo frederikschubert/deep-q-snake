@@ -7,10 +7,10 @@ import os
 
 class DCNetwork:
 	
-	def __init__(self, alpha, gamma, load_path):
+	def __init__(self, actions, alpha, gamma, load_path):
 		self.actions = ['down', 'right', 'up', 'left', 'nothing']
 		self.model = Sequential()
-		self.nb_actions = 5
+		self.actions = actions
 		self.gamma = gamma
 		self.alpha = alpha
 		self.dropout_prob = 0.1
@@ -30,7 +30,7 @@ class DCNetwork:
 		self.model.add(Activation('relu'))
 		self.model.add(Dense(128))
 		self.model.add(Activation('relu'))
-		self.model.add(Dense(self.nb_actions))
+		self.model.add(Dense(self.actions))
 
 		self.optimizer = Adam()
 		if load_path != '':
@@ -56,7 +56,7 @@ class DCNetwork:
 
 			# Set the target so that error will be 0 on all actions except the one taken
 			t = list(self.predict(datapoint['source'])[0])			
-			t[self.actions.index(datapoint['action'])] = (datapoint['reward'] + self.gamma * next_a_Q_value) if not datapoint['final'] else datapoint['reward']			
+			t[datapoint['action']] = (datapoint['reward'] + self.gamma * next_a_Q_value) if not datapoint['final'] else datapoint['reward']
 			
 			t_train.append(t)
 

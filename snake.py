@@ -140,13 +140,13 @@ while True:
 			sys.exit(0)
 
 	# Change direction according to the action
-	if action == 'up' and dirs != 0:
+	if action == 2 and dirs != 0: # up
 		dirs = 2
-	elif action == 'down' and dirs != 2:
+	elif action == 0 and dirs != 2: # down
 		dirs = 0
-	elif action == 'left' and dirs != 1:
+	elif action == 3 and dirs != 1: # left
 		dirs = 3
-	elif action == 'right' and dirs != 3:
+	elif action == 1 and dirs != 3: # right
 		dirs = 1
 
 	# Check if snake hit itself
@@ -198,7 +198,7 @@ while True:
 	# Update next state
 	next_state[1] = screenshot()
 	# Add <old_state, a, r, new_state, final> to experiences 
-	DQA.add_experience(np.asarray([state]), str(action), int(reward), np.asarray([next_state]),
+	DQA.add_experience(np.asarray([state]), action, reward, np.asarray([next_state]),
 						True if must_die else False)
 	plotter.episode_step(reward)
 	# Change current state
