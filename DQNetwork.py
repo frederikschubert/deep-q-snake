@@ -74,7 +74,7 @@ class DQNetwork:
 		print next_state_pred # Print a prediction so to have an idea of the Q-values magnitude
 		x_train = np.asarray(x_train).squeeze()
 		t_train = np.asarray(t_train).squeeze()
-		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=5, callbacks=[self.tensorboard])
+		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=1, callbacks=[self.tensorboard])
 
 
 

@@ -9,9 +9,9 @@ class DQAgent:
 				 training_freq = 1500,
 				 batch_size = 1024,
 				 alpha = 0.01,
-				 gamma = 0.99,
+				 gamma = 0.9,
 				 epsilon = 1,
-				 epsilon_rate = 0.9,
+				 epsilon_rate = 0.99,
 				 network_input_shape = (2,84,84),
 				 load_path = '',
 				 logger=None):
@@ -77,7 +77,7 @@ class DQAgent:
 		print 'Training session #', self.training_count, ' - epsilon:', self.epsilon
 		batch = self.sample_batch()
 		self.DCN.train(batch)  # Train the DCN
-		self.epsilon *= self.epsilon_rate  # Decrease the probability of picking a random action to improve exploitation
+		self.epsilon *= self.epsilon_rate + 0.05  # Decrease the probability of picking a random action to improve exploitation
 
 	def quit(self, save_path):
 		# Stop experiencing episodes, save the DCN, quit
