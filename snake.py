@@ -17,13 +17,13 @@ START_Y = SCREEN_SIZE / 2 - STEP
 BACKGROUND_COLOR = (0, 0, 0)
 SNAKE_COLOR = (255, 0, 0)
 APPLE_COLOR = (255, 255, 255)
-ACTIONS = 5
+ACTIONS = 4
 
 # Agent constants
 SCREENSHOT_DIMS = (84, 84)
-APPLE_REWARD = 1
-DEATH_REWARD = -10
-LIFE_REWARD = 0.1
+APPLE_REWARD = None
+DEATH_REWARD = -1
+LIFE_REWARD = 0
 
 # Argument defined variables
 must_train = False
@@ -37,9 +37,9 @@ logger.write({
 	'Action space' : ACTIONS
 })
 logger.write({
-	'Reward apple' : APPLE_REWARD,
+	'Reward apple' : APPLE_REWARD if APPLE_REWARD is not None else 'snake lenght',
 	'Reward death' : DEATH_REWARD,
-	'Reward life' : LIFE_REWARD if LIFE_REWARD is not None else 'snake lenght'
+	'Reward life' : LIFE_REWARD
 }) # Two different writes so the rewards will be writtes sequentially to the file
 
 def init_snake():
@@ -98,11 +98,11 @@ def screenshot():
 try:
 	opts, args = getopt.getopt(sys.argv[1:], 'hts:l:i:', ['help', 'train', 'save=', 'load=', 'iterations='])
 except getopt.GetoptError:
-	print 'Usage: snake.py [-tsl]'
+	print 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [-i num_iter]'
 	sys.exit(2)
 for opt, arg in opts:
 	if opt in ('-h', '--help'):
-		print 'Usage: snake.py [-tsl]'
+		print 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [-i num_iter]'
 	elif opt in ('-t', '--train'):
 		print 'Training...'
 		must_train = True
@@ -147,7 +147,7 @@ state = [screenshot(), screenshot()]
 next_state = [screenshot(), screenshot()]
 
 while True:
-	reward = LIFE_REWARD if LIFE_REWARD is not None else len(xs)  # Reward for not dying and not eating
+	reward = LIFE_REWARD # Reward for not dying and not eating
 	next_state[0] = state[1]
 
 	# Execute game tick and poll for system events
@@ -179,7 +179,7 @@ while True:
 	# Check if snake ate apple
 	if collide(xs[0], applepos[0], ys[0], applepos[1], STEP, APPLE_SIZE, STEP, APPLE_SIZE):
 		score += 1
-		reward = APPLE_REWARD
+		reward = APPLE_REWARD if APPLE_REWARD is not None else len(xs)
 		xs.append(700)
 		ys.append(700)
 		applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE))  # Ate apple

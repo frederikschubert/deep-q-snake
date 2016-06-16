@@ -16,20 +16,20 @@ class DQNetwork:
 		self.dropout_prob = dropout_prob
 
 		# Define neural network
-		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4), input_shape=input_shape))
+		self.model.add(BatchNormalization(axis=1, input_shape=input_shape))
+		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4)))
 		self.model.add(Activation('relu'))
 		self.model.add(Convolution2D(64, 4, 4, border_mode='valid', subsample=(2, 2)))
 		self.model.add(Activation('relu'))
 		self.model.add(Convolution2D(64, 3, 3, border_mode='valid', subsample=(1, 1)))
 		self.model.add(Activation('relu'))
-		self.model.add(BatchNormalization())
 		self.model.add(Flatten())
 		self.model.add(Dense(512))
 		self.model.add(Activation('relu'))
-		self.model.add(Dense(256))
-		self.model.add(Activation('relu'))
-		self.model.add(Dense(128))
-		self.model.add(Activation('relu'))
+		# self.model.add(Dense(256))
+		# self.model.add(Activation('relu'))
+		# self.model.add(Dense(128))
+		# self.model.add(Activation('relu'))
 		self.model.add(Dense(self.actions))
 
 		self.optimizer = Adam()
