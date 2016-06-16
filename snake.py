@@ -1,9 +1,12 @@
-import pygame, random, sys, getopt
 from pygame.locals import *
 from PIL import Image
-import numpy as np
 from DQAgent import DQAgent
-from RLplotter import RLplotter
+from logger import Logger
+import numpy as np
+import pygame
+import random
+import sys
+import getopt
 
 # Game constants
 STEP = 20
@@ -11,7 +14,6 @@ APPLE_SIZE = 20
 SCREEN_SIZE = 300
 START_X = SCREEN_SIZE / 2 - 5 * STEP
 START_Y = SCREEN_SIZE / 2 - STEP
-FPS = 120
 BACKGROUND_COLOR = (0, 0, 0)
 SNAKE_COLOR = (255, 0, 0)
 APPLE_COLOR = (255, 255, 255)
@@ -29,8 +31,16 @@ save_path = ''
 load_path = ''
 remaining_iters = -1
 
-# Statistics
-plotter = RLplotter()
+# Stats
+logger = Logger()
+logger.write({
+	'Action space' : ACTIONS
+})
+logger.write({
+	'Reward apple' : APPLE_REWARD,
+	'Reward death' : DEATH_REWARD,
+	'Reward life' : LIFE_REWARD if LIFE_REWARD is not None else 'snake lenght'
+}) # Two different writes so the rewards will be writtes sequentially to the file
 
 def init_snake():
 	# Restores the game to the intial state. To be used in the main game loop.
@@ -68,8 +78,8 @@ def collide(x1, x2, y1, y2, w1, w2, h1, h2):
 
 
 def die():
-	global plotter, score
-	plotter.episode_end(score)
+	global logger, score
+	logger.episode_end(score)
 	pygame.display.update()
 	init_snake()
 
@@ -103,6 +113,13 @@ for opt, arg in opts:
 	elif opt in ('-i', '--iterations'):
 		remaining_iters = int(arg)
 
+# Instantiate the agent
+DQA = DQAgent(
+	ACTIONS,
+	load_path = load_path,
+	logger=logger
+)
+
 # Initialize the game variables for the first time
 xs = [START_Y, START_Y, START_Y, START_Y, START_Y]
 ys = [START_X + 5 * STEP, START_X + 4 * STEP, START_X + 3 * STEP, START_X + 2 * STEP, START_X]
@@ -122,8 +139,6 @@ img.fill(SNAKE_COLOR)
 f = pygame.font.SysFont('Arial', STEP)
 clock = pygame.time.Clock()
 
-# Instantiate the agent
-DQA = DQAgent(ACTIONS, load_path)
 
 # First action is set to nothing (the direction is randomly selected anyway)
 action = 4 # nothing
@@ -132,15 +147,15 @@ state = [screenshot(), screenshot()]
 next_state = [screenshot(), screenshot()]
 
 while True:
-	reward = LIFE_REWARD  # Reward for not dying and not eating
+	reward = LIFE_REWARD if LIFE_REWARD is not None else len(xs)  # Reward for not dying and not eating
 	next_state[0] = state[1]
 
 	# Execute game tick and poll for system events
-	clock.tick(FPS)
+	clock.tick()
 	for e in pygame.event.get():
 		if e.type == QUIT:
 			DQA.quit(save_path)
-			plotter.plot()
+			logger.plot()
 			sys.exit(0)
 
 	# Change direction according to the action
@@ -202,23 +217,21 @@ while True:
 	# Update next state
 	next_state[1] = screenshot()
 	# Add <old_state, a, r, new_state, final> to experiences 
-	DQA.add_experience(np.asarray([state]), action, reward, np.asarray([next_state]),
-						True if must_die else False)
-	plotter.episode_step(reward)
+	DQA.add_experience(np.asarray([state]), action, reward, np.asarray([next_state]), True if must_die else False)
+	logger.episode_step(reward)
 	# Change current state
 	state = list(next_state)
 	# Poll the DQAgent to get the next action
 	action = DQA.get_action(np.asarray([state]))
 	# Train the network after a given number of transitions if the user requested training
 	if DQA.must_train() and must_train:
-		plotter.log(DQA.epsilon)
+		logger.log(DQA.epsilon)
 		if remaining_iters == 0:
 			DQA.quit(save_path)
-			plotter.plot()
+			logger.plot()
 			sys.exit(0)
 		DQA.train()
-		if remaining_iters != -1:
-			remaining_iters = remaining_iters - 1
+		remaining_iters -= 1 if remaining_iters != -1 else 0
 
 	if must_die:
 		die() # Lol

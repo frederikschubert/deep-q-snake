@@ -1,8 +1,9 @@
 import matplotlib.pyplot as p
 import numpy as np
-import os, time
+import os
+import time
 
-class RLplotter:
+class Logger:
 	def __init__(self):
 		self.step = 0
 		self.episode_nb = 0
@@ -25,6 +26,14 @@ class RLplotter:
 		if not os.path.exists(self.OUT_DIR):
 			os.makedirs(self.OUT_DIR)
 
+	def write(self, data):
+		try:
+			info = open(self.OUT_DIR + 'info.txt', 'a', 0)
+			for k in data:
+				info.write(k + ': ' + str(data[k]) + '\n')
+			info.close()
+		except:
+			print 'Error while opening log file.'
 
 	def log(self, epsilon):
 		self.x.append(self.step)
@@ -39,12 +48,10 @@ class RLplotter:
 		self.episode_scores = []
 
 		self.epsilons.append(epsilon)
-		pass
 
 	def episode_step(self, reward):
 		self.episode_length += 1
 		self.episode_reward += reward
-		pass
 
 	def episode_end(self, score):
 		self.episode_nb += 1
@@ -53,7 +60,6 @@ class RLplotter:
 		self.episodes_rewards.append(self.episode_reward)
 		self.episode_reward = 0
 		self.episode_scores.append(score)
-		pass
 
 	def plot(self):
 		p.figure()

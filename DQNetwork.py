@@ -1,22 +1,22 @@
-import time
 from keras.models import Sequential
 from keras.layers import *
 from keras.callbacks import TensorBoard
 from keras.optimizers import *
 import numpy as np
+import time
 import os
 
-class DCNetwork:
+class DQNetwork:
 	
-	def __init__(self, actions, alpha, gamma, load_path):
-		self.actions = ['down', 'right', 'up', 'left', 'nothing']
+	def __init__(self, actions, input_shape, alpha = 0.1, gamma = 0.99, dropout_prob = 0.1, load_path = '', logger=None):
 		self.model = Sequential()
-		self.actions = actions
+		self.actions = actions # Size of the network output
 		self.gamma = gamma
 		self.alpha = alpha
-		self.dropout_prob = 0.1
+		self.dropout_prob = dropout_prob
 
-		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4), input_shape=(2, 84, 84)))
+		# Define neural network
+		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4), input_shape=input_shape))
 		self.model.add(Activation('relu'))
 		self.model.add(Convolution2D(64, 4, 4, border_mode='valid', subsample=(2, 2)))
 		self.model.add(Activation('relu'))
@@ -34,15 +34,21 @@ class DCNetwork:
 
 		self.optimizer = Adam()
 
+		# Load the netwrok from saved model
 		if load_path != '':
 			self.load(load_path)
-		if not os.path.exists('./output'):
-			os.makedirs('./output')
-		self.OUT_DIR = ''.join(['./output/', time.strftime('%Y%m%d-%H%M%S/')])
-		if not os.path.exists(self.OUT_DIR):
-			os.makedirs(self.OUT_DIR)
-		self.tensorboard = TensorBoard(log_dir=self.OUT_DIR, histogram_freq=0, write_graph=False)
 
+		# Where to save Tensorboard logs
+		if logger is not None:
+			self.OUT_DIR = logger.OUT_DIR
+		else:
+			if not os.path.exists('./output'):
+				os.makedirs('./output')
+			self.OUT_DIR = ''.join(['./output/', time.strftime('%Y%m%d-%H%M%S/')])
+			if not os.path.exists(self.OUT_DIR):
+				os.makedirs(self.OUT_DIR)
+
+		self.tensorboard = TensorBoard(log_dir=self.OUT_DIR, histogram_freq=0, write_graph=False)
 		self.model.compile(loss = 'mean_squared_error', optimizer = self.optimizer, metrics = ['accuracy'])
 
 	def train(self, batch):
@@ -69,6 +75,7 @@ class DCNetwork:
 		x_train = np.asarray(x_train).squeeze()
 		t_train = np.asarray(t_train).squeeze()
 		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=5, callbacks=[self.tensorboard])
+
 
 
 	def predict(self, state):
