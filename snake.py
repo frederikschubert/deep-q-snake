@@ -52,8 +52,8 @@ def init_snake():
 	must_die = False
 	applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE))
 
-	# First action is set to nothing (the direction is randomly selected anyway)
-	action = 4 # nothing
+	# The direction is randomly selected
+	action = random.randint(0, ACTIONS - 1)
 	# Initialize the states for the first experience
 	state = [screenshot(), screenshot()]
 	next_state = [screenshot(), screenshot()]
@@ -140,8 +140,8 @@ f = pygame.font.SysFont('Arial', STEP)
 clock = pygame.time.Clock()
 
 
-# First action is set to nothing (the direction is randomly selected anyway)
-action = 4 # nothing
+# The direction is randomly selected
+action = random.randint(0,ACTIONS-1)
 # Initialize the states for the first experience
 state = [screenshot(), screenshot()]
 next_state = [screenshot(), screenshot()]
