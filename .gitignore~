@@ -2,4 +2,3 @@ output/
 .idea/
 *png
 *pyc
-*.h5
