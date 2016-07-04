@@ -1,10 +1,7 @@
 from keras.models import Sequential
 from keras.layers import *
-from keras.callbacks import TensorBoard
 from keras.optimizers import *
 import numpy as np
-import time
-import os
 
 class DQNetwork:
 	
@@ -26,29 +23,16 @@ class DQNetwork:
 		self.model.add(Flatten())
 		self.model.add(Dense(512))
 		self.model.add(Activation('relu'))
-		# self.model.add(Dense(256))
-		# self.model.add(Activation('relu'))
-		# self.model.add(Dense(128))
-		# self.model.add(Activation('relu'))
 		self.model.add(Dense(self.actions))
 
 		self.optimizer = Adam()
+
+		self.logger = logger
 
 		# Load the netwrok from saved model
 		if load_path != '':
 			self.load(load_path)
 
-		# Where to save Tensorboard logs
-		if logger is not None:
-			self.OUT_DIR = logger.OUT_DIR
-		else:
-			if not os.path.exists('./output'):
-				os.makedirs('./output')
-			self.OUT_DIR = ''.join(['./output/', time.strftime('%Y%m%d-%H%M%S/')])
-			if not os.path.exists(self.OUT_DIR):
-				os.makedirs(self.OUT_DIR)
-
-		self.tensorboard = TensorBoard(log_dir=self.OUT_DIR, histogram_freq=0, write_graph=False)
 		self.model.compile(loss = 'mean_squared_error', optimizer = self.optimizer, metrics = ['accuracy'])
 
 	def train(self, batch):
@@ -62,8 +46,7 @@ class DQNetwork:
 
 			# Get the current Q-values for the next state and select the best
 			next_state_pred = list(self.predict(datapoint['dest']).squeeze())
-			next_a_idx = np.argmax(next_state_pred)
-			next_a_Q_value = next_state_pred[next_a_idx]
+			next_a_Q_value = np.max(next_state_pred)
 
 			# Set the target so that error will be 0 on all actions except the one taken
 			t = list(self.predict(datapoint['source'])[0])			
@@ -74,18 +57,16 @@ class DQNetwork:
 		print next_state_pred # Print a prediction so to have an idea of the Q-values magnitude
 		x_train = np.asarray(x_train).squeeze()
 		t_train = np.asarray(t_train).squeeze()
-		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=1, callbacks=[self.tensorboard])
-
-
+		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=1)
 
 	def predict(self, state):
 		# Feed state into the model, return predicted Q-values
 		return self.model.predict(state, batch_size=1)
 
-	def save(self, path):
+	def save(self, filename = None):
 		# Save the model and its weights to disk
 		print 'Saving...'
-		self.model.save_weights(path)
+		self.model.save_weights(self.logger.path + ('autoencoder.h5' if filename is None else filename))
 
 	def load(self, path):
 		# Load the model and its weights from path

@@ -1,7 +1,7 @@
 from pygame.locals import *
 from PIL import Image
 from DQAgent import DQAgent
-from logger import Logger
+from Logger import Logger
 import numpy as np
 import pygame
 import random
@@ -31,24 +31,26 @@ save_path = ''
 load_path = ''
 remaining_iters = -1
 
-# Stats
 logger = Logger()
-logger.write({
+logger.log({
 	'Action space' : ACTIONS
 })
-logger.write({
+logger.log({
 	'Reward apple' : APPLE_REWARD if APPLE_REWARD is not None else 'snake lenght',
 	'Reward death' : DEATH_REWARD,
 	'Reward life' : LIFE_REWARD
 }) # Two different writes so the rewards will be writtes sequentially to the file
+logger.to_csv('test_data.csv', ['Score,Episode length'])
+logger.to_csv('data.csv', ['Score,Episode length'])
 
 def init_snake():
 	# Restores the game to the intial state. To be used in the main game loop.
-	global xs, ys, dirs, score, applepos, s, t, action, state, next_state, must_die
+	global xs, ys, dirs, score, episode_length, applepos, s, action, state, next_state, must_die
 	xs = [START_Y, START_Y, START_Y, START_Y, START_Y]
 	ys = [START_X + 5 * STEP, START_X + 4 * STEP, START_X + 3 * STEP, START_X + 2 * STEP, START_X]
 	dirs = random.choice([0, 1, 3])
 	score = 0
+	episode_length = 0
 	must_die = False
 	applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE))
 
@@ -63,8 +65,6 @@ def init_snake():
 	for ii in range(0, len(xs)):
 		s.blit(img, (xs[ii], ys[ii]))
 	s.blit(appleimage, applepos)
-	t = f.render(str(score), True, (0, 0, 0))
-	s.blit(t, (10, 10))
 	pygame.display.update()
 
 
@@ -78,8 +78,28 @@ def collide(x1, x2, y1, y2, w1, w2, h1, h2):
 
 
 def die():
-	global logger, score
-	logger.episode_end(score)
+	global logger, remaining_iters, score, episode_length, must_test, experience_buffer
+	# Before resetting test, save data about the testing episode
+	if must_test:
+		logger.to_csv('test_data.csv', [score, episode_length])
+		logger.log('Test episode - Score: ' + str(score) + '; steps: ' + str(episode_length))
+	must_test = False # Reset this every time (only one testing episode per training session)
+	if score >= 1:
+		print 'Adding episode to experience backup; score:', score
+		logger.to_csv('train_data.csv', [score, episode_length])
+		for exp in experience_buffer:
+			DQA.add_experience(*exp)
+	# Train the network after a given number of transitions if the user requested training
+	if DQA.must_train() and must_train:
+		if remaining_iters == 0:
+			DQA.quit()
+			sys.exit(0)
+		DQA.train()
+		remaining_iters -= 1 if remaining_iters != -1 else 0
+		must_test = True # After a training session, the next episode will be a test one
+		logger.log('Test episode....')
+	experience_buffer = []
+	# Update graphics and restart episode
 	pygame.display.update()
 	init_snake()
 
@@ -120,11 +140,18 @@ DQA = DQAgent(
 	logger=logger
 )
 
+experience_buffer = []
+
+# Stats
+score = 0
+episode_length = 0
+episode_nb = 0
+must_test = False
+
 # Initialize the game variables for the first time
 xs = [START_Y, START_Y, START_Y, START_Y, START_Y]
 ys = [START_X + 5 * STEP, START_X + 4 * STEP, START_X + 3 * STEP, START_X + 2 * STEP, START_X]
 dirs = random.choice([0, 1, 3])
-score = 0
 must_die = False
 applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE))
 
@@ -136,7 +163,6 @@ appleimage = pygame.Surface((APPLE_SIZE, APPLE_SIZE))
 appleimage.fill(APPLE_COLOR)
 img = pygame.Surface((STEP, STEP))
 img.fill(SNAKE_COLOR)
-f = pygame.font.SysFont('Arial', STEP)
 clock = pygame.time.Clock()
 
 
@@ -147,6 +173,7 @@ state = [screenshot(), screenshot()]
 next_state = [screenshot(), screenshot()]
 
 while True:
+	episode_length += 1
 	reward = LIFE_REWARD # Reward for not dying and not eating
 	next_state[0] = state[1]
 
@@ -154,8 +181,7 @@ while True:
 	clock.tick()
 	for e in pygame.event.get():
 		if e.type == QUIT:
-			DQA.quit(save_path)
-			logger.plot()
+			DQA.quit()
 			sys.exit(0)
 
 	# Change direction according to the action
@@ -210,28 +236,16 @@ while True:
 	for i in range(0, len(xs)):
 		s.blit(img, (xs[i], ys[i]))
 	s.blit(appleimage, applepos)
-	t = f.render(str(score), True, (0, 0, 0))
-	s.blit(t, (10, 10))
 	pygame.display.update()
 
 	# Update next state
 	next_state[1] = screenshot()
-	# Add <old_state, a, r, new_state, final> to experiences 
-	DQA.add_experience(np.asarray([state]), action, reward, np.asarray([next_state]), True if must_die else False)
-	logger.episode_step(reward)
+	# Add <old_state, a, r, new_state, final> to experiences
+	experience_buffer.append((np.asarray([state]), action, reward, np.asarray([next_state]), True if must_die else False))
 	# Change current state
 	state = list(next_state)
 	# Poll the DQAgent to get the next action
-	action = DQA.get_action(np.asarray([state]))
-	# Train the network after a given number of transitions if the user requested training
-	if DQA.must_train() and must_train:
-		logger.log(DQA.epsilon)
-		if remaining_iters == 0:
-			DQA.quit(save_path)
-			logger.plot()
-			sys.exit(0)
-		DQA.train()
-		remaining_iters -= 1 if remaining_iters != -1 else 0
+	action = DQA.get_action(np.asarray([state]), testing=must_test)
 
 	if must_die:
 		die() # Lol

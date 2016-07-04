@@ -6,7 +6,7 @@ import numpy as np
 class DQAgent:
 	def __init__(self,
 				 actions,
-				 training_freq = 1500,
+				 training_freq = 4096,
 				 batch_size = 1024,
 				 alpha = 0.01,
 				 gamma = 0.9,
@@ -25,6 +25,7 @@ class DQAgent:
 		self.gamma = gamma  # Discount factor
 		self.epsilon = epsilon  # Coefficient for epsilon-greedy exploration
 		self.epsilon_rate = epsilon_rate  # (inverse) Rate at which to make epsilon smaller, as training improves the agent's performance; epsilon = epsilon * rate
+		self.min_epsilon = 0.3 # Minimum epsilon value
 		# Experience variables
 		self.experiences = []
 		self.training_count = 0
@@ -40,7 +41,7 @@ class DQAgent:
 		)
 
 		if logger is not None:
-			logger.write({
+			logger.log({
 				'Learning rate' : self.alpha,
 				'Discount factor' : self.gamma,
 				'Starting epsilon' : self.epsilon,
@@ -48,10 +49,10 @@ class DQAgent:
 				'Batch size' : self.batch_size
 			})
 
-	def get_action(self, state):
+	def get_action(self, state, testing=False):
 		# Poll DCN for Q-values, return argmax with probability 1-epsilon
 		q_values = self.DCN.predict(state)
-		if random.random() < self.epsilon:
+		if random.random() < self.epsilon and not testing:
 			return random.randint(0,self.actions-1)
 		else:
 			return np.argmax(q_values)
@@ -77,9 +78,8 @@ class DQAgent:
 		print 'Training session #', self.training_count, ' - epsilon:', self.epsilon
 		batch = self.sample_batch()
 		self.DCN.train(batch)  # Train the DCN
-		self.epsilon = self.epsilon * self.epsilon_rate if self.epsilon > 0.05 else 0.05  # Decrease the probability of picking a random action to improve exploitation
+		self.epsilon = self.epsilon * self.epsilon_rate if self.epsilon > self.min_epsilon else self.min_epsilon  # Decrease the probability of picking a random action to improve exploitation
 
-	def quit(self, save_path):
+	def quit(self):
 		# Stop experiencing episodes, save the DCN, quit
-		if save_path != '':
-			self.DCN.save(save_path)
+		self.DCN.save()
