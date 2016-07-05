@@ -78,15 +78,17 @@ def collide(x1, x2, y1, y2, w1, w2, h1, h2):
 
 
 def die():
-	global logger, remaining_iters, score, episode_length, must_test, experience_buffer
+	global logger, remaining_iters, score, episode_length, must_test, experience_buffer, exp_backup_counter
 	# Before resetting test, save data about the testing episode
 	if must_test:
 		logger.to_csv('test_data.csv', [score, episode_length])
 		logger.log('Test episode - Score: ' + str(score) + '; steps: ' + str(episode_length))
 	must_test = False # Reset this every time (only one testing episode per training session)
 	if score >= 1:
-		print 'Adding episode to experience backup; score:', score
+		print 'Adding episode to experience backup; score:', score, '; episode length:', episode_length
 		logger.to_csv('train_data.csv', [score, episode_length])
+		exp_backup_counter += len(experience_buffer)
+		print 'Collected', exp_backup_counter, 'experiences of', DQA.batch_size
 		for exp in experience_buffer:
 			DQA.add_experience(*exp)
 	# Train the network after a given number of transitions if the user requested training
@@ -146,6 +148,7 @@ experience_buffer = []
 score = 0
 episode_length = 0
 episode_nb = 0
+exp_backup_counter = 0
 must_test = False
 
 # Initialize the game variables for the first time
