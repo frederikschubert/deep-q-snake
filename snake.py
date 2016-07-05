@@ -93,6 +93,7 @@ def die():
 			DQA.add_experience(*exp)
 	# Train the network after a given number of transitions if the user requested training
 	if DQA.must_train() and must_train:
+		exp_backup_counter = 0
 		if remaining_iters == 0:
 			DQA.quit()
 			sys.exit(0)
