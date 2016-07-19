@@ -7,6 +7,9 @@ import pygame
 import random
 import sys
 import getopt
+import os
+
+# os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 # Game constants
 STEP = 20

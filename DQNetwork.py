@@ -16,17 +16,21 @@ class DQNetwork:
 		self.model.add(BatchNormalization(axis=1, input_shape=input_shape))
 		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', subsample=(4, 4)))
 		self.model.add(Activation('relu'))
+
+		self.model.add(BatchNormalization(axis=1, input_shape=input_shape))
 		self.model.add(Convolution2D(64, 4, 4, border_mode='valid', subsample=(2, 2)))
 		self.model.add(Activation('relu'))
+
+		self.model.add(BatchNormalization(axis=1, input_shape=input_shape))
 		self.model.add(Convolution2D(64, 3, 3, border_mode='valid', subsample=(1, 1)))
 		self.model.add(Activation('relu'))
 		self.model.add(Flatten())
+
 		self.model.add(Dense(512))
 		self.model.add(Activation('relu'))
 		self.model.add(Dense(self.actions))
 
 		self.optimizer = Adam()
-
 		self.logger = logger
 
 		# Load the netwrok from saved model
@@ -66,7 +70,7 @@ class DQNetwork:
 	def save(self, filename = None):
 		# Save the model and its weights to disk
 		print 'Saving...'
-		self.model.save_weights(self.logger.path + ('autoencoder.h5' if filename is None else filename))
+		self.model.save_weights(self.logger.path + ('model.h5' if filename is None else filename))
 
 	def load(self, path):
 		# Load the model and its weights from path

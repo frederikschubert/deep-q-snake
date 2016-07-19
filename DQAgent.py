@@ -72,13 +72,14 @@ class DQAgent:
 		# Returns true if the number of samples in experiences is greater than the batch size
 		return self.batch_size <= len(self.experiences)
 
-	def train(self):
+	def train(self, update_epsilon = True):
 		# Sample a batch from experiences, train the DCN on it, update the epsilon-greedy coefficient
 		self.training_count += 1
 		print 'Training session #', self.training_count, ' - epsilon:', self.epsilon
 		batch = self.sample_batch()
 		self.DCN.train(batch)  # Train the DCN
-		self.epsilon = self.epsilon * self.epsilon_rate if self.epsilon > self.min_epsilon else self.min_epsilon  # Decrease the probability of picking a random action to improve exploitation
+		if update_epsilon:
+			self.epsilon = self.epsilon * self.epsilon_rate if self.epsilon > self.min_epsilon else self.min_epsilon  # Decrease the probability of picking a random action to improve exploitation
 
 	def quit(self):
 		# Stop experiencing episodes, save the DCN, quit

@@ -2,7 +2,10 @@ import os, time
 
 
 class Logger:
-	def __init__(self):
+	def __init__(self, debug = False):
+		if debug:
+			self.debug = debug
+			return
 		output_folder = './output/'
 		run_folder = 'run%Y%m%d-%H%M%S/'
 		if not os.path.exists(output_folder):
@@ -14,6 +17,7 @@ class Logger:
 		self.save_file = self.path + 'model.h5'
 
 	def log(self, data):
+		if self.debug: return
 		try:
 			logfile = open(self.path + 'log.txt', 'a')
 		except IOError:
@@ -23,11 +27,14 @@ class Logger:
 			for k in data:
 				logfile.write(k + ': ' + str(data[k]) + '\n')
 				print k + ': ' + str(data[k])
+		if type(data) is tuple:
+			logfile.write(data[0] + ': ' + str(data[1]) + '\n')
 		if type(data) is str:
 			logfile.write(data + '\n')
 			print data
 
 	def to_csv(self, filename, row):
+		if self.debug: return
 		try:
 			file = open(self.path + filename, 'a')
 		except IOError:
