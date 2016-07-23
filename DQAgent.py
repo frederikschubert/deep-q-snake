@@ -6,7 +6,6 @@ import numpy as np
 class DQAgent:
 	def __init__(self,
 				 actions,
-				 training_freq = 4096,
 				 batch_size = 1024,
 				 alpha = 0.01,
 				 gamma = 0.9,
@@ -18,7 +17,6 @@ class DQAgent:
 
 		self.actions = actions # Size of the discreet action space
 		# Training parameters
-		self.training_freq = training_freq  # Number of experiences after which to train the model
 		self.batch_size = batch_size
 		# Hyperparameters
 		self.alpha = alpha  # Learning rate (The Adam optimizer paper suggests 0.001 as default)
@@ -70,10 +68,10 @@ class DQAgent:
 
 	def must_train(self):
 		# Returns true if the number of samples in experiences is greater than the batch size
-		return self.batch_size <= len(self.experiences)
+		return len(self.experiences) >= self.batch_size
 
 	def train(self, update_epsilon = True):
-		# Sample a batch from experiences, train the DCN on it, update the epsilon-greedy coefficient
+		# Sample a batch from experiences, train the DCN on it, [optionally] update the epsilon-greedy coefficient
 		self.training_count += 1
 		print 'Training session #', self.training_count, ' - epsilon:', self.epsilon
 		batch = self.sample_batch()

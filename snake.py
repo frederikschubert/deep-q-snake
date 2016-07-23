@@ -9,9 +9,15 @@ import sys
 import getopt
 import os
 
-# os.environ["SDL_VIDEODRIVER"] = "dummy"
-
+### CONSTANTS
 # Game constants
+HELP_MESSAGE = 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [-i num_iter] [-v] [-d]\n' \
+		   't, train: train the agent\n' \
+		   's, save: save the neural network when quitting\n' \
+		   'l, load path/ti/file.h5: laod the neural network from disk\n' \
+		   'i, iterations number: perform number training iterations before quitting\n' \
+		   'v, no-video: suppress video output (useful to train on headless servers)\n' \
+		   'd, debug: do not print anything to file and do not create the output folder\n'
 STEP = 20
 APPLE_SIZE = 20
 SCREEN_SIZE = 300
@@ -33,21 +39,10 @@ must_train = False
 save_path = ''
 load_path = ''
 remaining_iters = -1
-
-logger = Logger()
-logger.log({
-	'Action space' : ACTIONS
-})
-logger.log({
-	'Reward apple' : APPLE_REWARD if APPLE_REWARD is not None else 'snake lenght',
-	'Reward death' : DEATH_REWARD,
-	'Reward life' : LIFE_REWARD
-}) # Two different writes so the rewards will be writtes sequentially to the file
-logger.to_csv('test_data.csv', ['Score,Episode length'])
-logger.to_csv('data.csv', ['Score,Episode length'])
+debug = False
 
 def init_snake():
-	# Restores the game to the intial state. To be used in the main game loop.
+	# Restores the game to the intial state. Use thsi to reset the main game loop.
 	global xs, ys, dirs, score, episode_length, applepos, s, action, state, next_state, must_die
 	xs = [START_Y, START_Y, START_Y, START_Y, START_Y]
 	ys = [START_X + 5 * STEP, START_X + 4 * STEP, START_X + 3 * STEP, START_X + 2 * STEP, START_X]
@@ -82,12 +77,12 @@ def collide(x1, x2, y1, y2, w1, w2, h1, h2):
 
 def die():
 	global logger, remaining_iters, score, episode_length, must_test, experience_buffer, exp_backup_counter
-	# Before resetting test, save data about the testing episode
+	# Before resetting must_test, save data about the testing episode
 	if must_test:
 		logger.to_csv('test_data.csv', [score, episode_length])
 		logger.log('Test episode - Score: ' + str(score) + '; steps: ' + str(episode_length))
 	must_test = False # Reset this every time (only one testing episode per training session)
-	if score >= 1:
+	if score >= 1 and episode_length >= 10:
 		print 'Adding episode to experience backup; score:', score, '; episode length:', episode_length
 		logger.to_csv('train_data.csv', [score, episode_length])
 		exp_backup_counter += len(experience_buffer)
@@ -120,15 +115,16 @@ def screenshot():
 	matrix = np.asarray(image.getdata(), dtype=np.float64).reshape(image.size[0], image.size[1])
 	return matrix
 
-
+# Read arguments
 try:
-	opts, args = getopt.getopt(sys.argv[1:], 'hts:l:i:', ['help', 'train', 'save=', 'load=', 'iterations='])
+	opts, args = getopt.getopt(sys.argv[1:], 'htsl:i:dv', ['help', 'train', 'save', 'load=', 'iterations=', 'no-video', 'debug'])
 except getopt.GetoptError:
 	print 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [-i num_iter]'
 	sys.exit(2)
 for opt, arg in opts:
 	if opt in ('-h', '--help'):
-		print 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [-i num_iter]'
+		print HELP_MESSAGE
+		sys.exit(0)
 	elif opt in ('-t', '--train'):
 		print 'Training...'
 		must_train = True
@@ -138,15 +134,32 @@ for opt, arg in opts:
 		load_path = arg
 	elif opt in ('-i', '--iterations'):
 		remaining_iters = int(arg)
+	elif opt in ('-v', '--no-video'):
+		os.environ['SDL_VIDEODRIVER'] = 'dummy'
+	elif opt in ('-d', '--debug'):
+		debug = True
 
-# Instantiate the agent
+# Log data
+logger = Logger(debug=debug)
+logger.log({
+	'Action space': ACTIONS
+})
+logger.log({
+	'Reward apple': APPLE_REWARD if APPLE_REWARD is not None else 'snake lenght',
+	'Reward death': DEATH_REWARD,
+	'Reward life': LIFE_REWARD
+})  # Two different writes so the rewards will be writtes sequentially to the file
+logger.to_csv('test_data.csv', ['Score,Episode length'])
+logger.to_csv('data.csv', ['Score,Episode length'])
+
+# Agent
 DQA = DQAgent(
 	ACTIONS,
 	load_path = load_path,
 	logger=logger
 )
 
-experience_buffer = []
+experience_buffer = [] # This will store the SARS tuples at each episode
 
 # Stats
 score = 0
@@ -172,9 +185,9 @@ img = pygame.Surface((STEP, STEP))
 img.fill(SNAKE_COLOR)
 clock = pygame.time.Clock()
 
-
 # The direction is randomly selected
 action = random.randint(0,ACTIONS-1)
+
 # Initialize the states for the first experience
 state = [screenshot(), screenshot()]
 next_state = [screenshot(), screenshot()]
@@ -228,7 +241,6 @@ while True:
 		xs[i] = xs[i - 1]
 		ys[i] = ys[i - 1]
 		i -= 1
-
 	if dirs == 0:
 		ys[0] += STEP
 	elif dirs == 1:
@@ -247,7 +259,7 @@ while True:
 
 	# Update next state
 	next_state[1] = screenshot()
-	# Add <old_state, a, r, new_state, final> to experiences
+	# Add SARS tuple to experience_buffer
 	experience_buffer.append((np.asarray([state]), action, reward, np.asarray([next_state]), True if must_die else False))
 	# Change current state
 	state = list(next_state)
