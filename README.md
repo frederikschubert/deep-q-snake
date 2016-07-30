@@ -4,7 +4,7 @@ Rather than a pre-packaged tool to simply see the agent playing the game, this i
 The code used to play the game has been adapted from [this 35 LOC example](http://pygame.org/project-Snake+in+35+lines-818-.html).   
 
 ### Installation
-To run the script you'll need Keras and Pygame installed on your system: see [here](http://keras.io/#installation)and [here](http://www.pygame.org/wiki/GettingStarted) for detailed instructions on how to install the libraries; you might want to enable GPU support in order to speed up the convolution, but since this a rather simple model it is not strictly necessary.    
+To run the script you'll need Keras and Pygame installed on your system: see [here](http://keras.io/#installation) and [here](http://www.pygame.org/wiki/GettingStarted) for detailed instructions on how to install the libraries; you might want to enable GPU support in order to speed up the convolution, but since this a rather simple model it is not strictly necessary.    
 Other dependencies include PIL and h5py (see [here](http://packages.ubuntu.com/trusty/python-h5py) for installation on Ubuntu), which should be available through pip.   
 
 To run the script simply download the source code:
