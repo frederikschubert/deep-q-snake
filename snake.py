@@ -1,3 +1,4 @@
+import argparse
 from pygame.locals import *
 from PIL import Image, ImageOps
 from DQAgent import DQAgent
@@ -6,18 +7,10 @@ import numpy as np
 import pygame
 import random
 import sys
-import getopt
 import os
 
 ### CONSTANTS
-HELP_MESSAGE = 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [-i num_iter] [-v] [-d]\n' \
-		   't, train: train the agent\n' \
-		   's, save: save the neural network when quitting\n' \
-		   'l, load path/ti/file.h5: laod the neural network from disk\n' \
-		   'i, iterations number: perform number training iterations before quitting\n' \
-		   'v, no-video: suppress video output (useful to train on headless servers)\n' \
-		   'd, debug: do not print anything to file and do not create the output folder\n'
-
+MAX_EPISODES_BETWEEN_TRAININGS = 1500
 # Game constants
 STEP = 20
 APPLE_SIZE = 20
@@ -31,18 +24,8 @@ ACTIONS = 4
 
 # Agent constants
 SCREENSHOT_DIMS = (84, 84)
-APPLE_REWARD = None
-DEATH_REWARD = -1
-LIFE_REWARD = 0
 
-# Argument defined variables
-must_train = False
-save_path = ''
-load_path = ''
-remaining_iters = -1
-debug = False
-is_headless = False
-
+### FUNCTIONS
 def init_snake():
 	# Restores the game to the intial state. Use thsi to reset the main game loop.
 	global xs, ys, dirs, score, episode_length, applepos, s, action, state, next_state, must_die
@@ -67,7 +50,6 @@ def init_snake():
 	s.blit(appleimage, applepos)
 	pygame.display.update()
 
-
 def collide(x1, x2, y1, y2, w1, w2, h1, h2):
 	# Returns true if object at (x1, y1) collides with object at (x2, y2)
 	# after moving the first of (w1, h1) and the second of (w2, h2)
@@ -76,9 +58,14 @@ def collide(x1, x2, y1, y2, w1, w2, h1, h2):
 	else:
 		return False
 
-
 def die():
-	global logger, remaining_iters, score, episode_length, must_test, experience_buffer, exp_backup_counter
+	global logger, remaining_iters, score, episode_length, must_test, experience_buffer, exp_backup_counter, global_episode_counter
+	global_episode_counter += 1
+	# If agent is stuck, kill the process and save that precious AWS time
+	if global_episode_counter > MAX_EPISODES_BETWEEN_TRAININGS:
+		logger.log('Shutting process down because something seems to have gone wrong during training. Please manually check that everything is OK and in case restart the training by using the -l flag.')
+		DQA.quit()
+		sys.exit(0)
 	# Before resetting must_test, save data about the testing episode
 	if must_test:
 		logger.to_csv('test_data.csv', [score, episode_length])
@@ -92,8 +79,10 @@ def die():
 		for exp in experience_buffer:
 			DQA.add_experience(*exp)
 	# Train the network after a given number of transitions if the user requested training
-	if DQA.must_train() and must_train:
+	if DQA.must_train() and args.train:
 		exp_backup_counter = 0
+		logger.log('Episodes completed to get the desired number of experience: %d' % (global_episode_counter))
+		global_episode_counter = 0
 		if remaining_iters == 0:
 			DQA.quit()
 			sys.exit(0)
@@ -106,48 +95,44 @@ def die():
 	pygame.display.update()
 	init_snake()
 
-
 def screenshot():
 	# Take a screenshot of the screen, convert it to greyscale, resize it to 60x60, convert it to matrix form
 	global s, is_headless
 	data = pygame.image.tostring(s, 'RGB')  # Take screenshot
-	image = Image.fromstring('RGB', (SCREEN_SIZE, SCREEN_SIZE), data)  # Import it in PIL
+	image = Image.fromstring('RGB', (SCREEN_SIZE, SCREEN_SIZE), data) # Import it in PIL
 	image = image.convert('L')  # Convert to greyscale
 	image = image.resize(SCREENSHOT_DIMS)
 	image = ImageOps.invert(image) if is_headless else image # Don't ever, ever, ever ask why
 	image = image.convert('1')
-	image.save('ciao.png')
 	matrix = np.asarray(image.getdata(), dtype=np.float64).reshape(image.size[0], image.size[1])
 	return matrix
 
-# Read arguments
-try:
-	opts, args = getopt.getopt(sys.argv[1:], 'htsl:i:dv', ['help', 'train', 'save', 'load=', 'iterations=', 'no-video', 'debug'])
-except getopt.GetoptError:
-	print 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [-i num_iter]'
-	sys.exit(2)
-for opt, arg in opts:
-	if opt in ('-h', '--help'):
-		print HELP_MESSAGE
-		sys.exit(0)
-	elif opt in ('-t', '--train'):
-		print 'Training...'
-		must_train = True
-	elif opt in ('-s', '--save'):
-		save_path = arg
-	elif opt in ('-l', '--load'):
-		load_path = arg
-	elif opt in ('-i', '--iterations'):
-		remaining_iters = int(arg)
-	elif opt in ('-v', '--no-video'):
-		os.environ['SDL_VIDEODRIVER'] = 'dummy'
-		BACKGROUND_COLOR = (255,255,255) # Pygame acts weird on headless servers
-		is_headless = True
-	elif opt in ('-d', '--debug'):
-		debug = True
+### ARGUMENTS
+parser = argparse.ArgumentParser()
+parser.add_argument('-t', '--train', action='store_true', help='train the agent.')
+parser.add_argument('-l', '--load', type=str, required=False, default='', help='load the neural network from disk.')
+parser.add_argument('-i', '--iterations', type=int, required=False, default=-1, help='perform ITERATIONS training iterations before quitting.')
+parser.add_argument('-v', '--novideo', action='store_true', help='suppress video output (useful to train on headless servers).')
+parser.add_argument('-d', '--debug', action='store_true', help='do not print anything to file and do not create the output folder.')
+parser.add_argument('--alpha', type=float, required=False, default=0.01, help='custom learning rate for the Q-network.')
+parser.add_argument('--gamma', type=float, required=False, default=0.9, help='custom discount factor for the environment.')
+parser.add_argument('--reward', type=str, required=False, default='N,-1,0', help='comma separated list with rewards for apple, death and life. Pass \'N\' as apple reward to use the current snake length.')
+args = parser.parse_args()
 
-# Log data
-logger = Logger(debug=debug)
+remaining_iters = args.iterations
+is_headless = args.novideo
+if is_headless:
+	os.environ['SDL_VIDEODRIVER'] = 'dummy'
+	BACKGROUND_COLOR = (255, 255, 255)  # Pygame acts weird on headless servers
+if args.debug:
+	print 'WARNING: debug mode is enabled, output will not be saved.'
+reward_function = [float(r) if r is not 'N' else None for r in args.reward.split(',')]
+APPLE_REWARD = reward_function[0]
+DEATH_REWARD = reward_function[1]
+LIFE_REWARD = reward_function[2]
+
+### LOGGER
+logger = Logger(debug=args.debug)
 logger.log({
 	'Action space': ACTIONS
 })
@@ -157,24 +142,26 @@ logger.log({
 	'Reward life': LIFE_REWARD
 })  # Two different writes so the rewards will be writtes sequentially to the file
 logger.to_csv('test_data.csv', ['Score,Episode length'])
-logger.to_csv('data.csv', ['Score,Episode length'])
+logger.to_csv('train_data.csv', ['Score,Episode length'])
+logger.to_csv('loss_history.csv', ['Loss'])
 
-# Agent
+### AGENT
 DQA = DQAgent(
 	ACTIONS,
-	load_path = load_path,
+	load_path = args.load,
 	logger=logger
 )
-
 experience_buffer = [] # This will store the SARS tuples at each episode
 
-# Stats
+### STATS
 score = 0
 episode_length = 0
 episode_nb = 0
 exp_backup_counter = 0
+global_episode_counter = 0 # Keeps track of how many episodes there were between traning iterations
 must_test = False
 
+### START
 # Initialize the game variables for the first time
 xs = [START_Y, START_Y, START_Y, START_Y, START_Y]
 ys = [START_X + 5 * STEP, START_X + 4 * STEP, START_X + 3 * STEP, START_X + 2 * STEP, START_X]
@@ -199,7 +186,7 @@ action = random.randint(0,ACTIONS-1)
 state = [screenshot(), screenshot()]
 next_state = [screenshot(), screenshot()]
 
-while True:
+while True: # Main game loop
 	episode_length += 1
 	reward = LIFE_REWARD # Reward for not dying and not eating
 	next_state[0] = state[1]
@@ -274,4 +261,4 @@ while True:
 	action = DQA.get_action(np.asarray([state]), testing=must_test)
 
 	if must_die:
-		die() # Lol
+		die()

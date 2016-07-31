@@ -15,21 +15,24 @@ class DQNetwork:
 
 		# Define neural network
 		self.model.add(BatchNormalization(axis=1, input_shape=input_shape))
-		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', W_regularizer=l2(), subsample=(4, 4)))
+		self.model.add(Convolution2D(32, 8, 8, border_mode='valid', W_regularizer=l2(self.alpha), subsample=(4, 4)))
 		self.model.add(Activation('relu'))
 
-		self.model.add(BatchNormalization(axis=1, input_shape=input_shape))
-		self.model.add(Convolution2D(64, 4, 4, border_mode='valid', W_regularizer=l2(), subsample=(2, 2)))
+		self.model.add(BatchNormalization(axis=1))
+		self.model.add(Convolution2D(64, 4, 4, border_mode='valid', W_regularizer=l2(self.alpha), subsample=(2, 2)))
 		self.model.add(Activation('relu'))
 
-		self.model.add(BatchNormalization(axis=1, input_shape=input_shape))
-		self.model.add(Convolution2D(64, 3, 3, border_mode='valid', W_regularizer=l2(), subsample=(1, 1)))
+		self.model.add(BatchNormalization(axis=1))
+		self.model.add(Convolution2D(64, 3, 3, border_mode='valid', W_regularizer=l2(self.alpha), subsample=(1, 1)))
 		self.model.add(Activation('relu'))
 
 		self.model.add(Flatten())
 
-		self.model.add(Dense(512, W_regularizer=l2()))
+		self.model.add(BatchNormalization(mode=1))
+		self.model.add(Dropout(self.dropout_prob))
+		self.model.add(Dense(1024))
 		self.model.add(Activation('relu'))
+
 		self.model.add(Dense(self.actions))
 
 		self.optimizer = Adam()
@@ -63,7 +66,8 @@ class DQNetwork:
 		print next_state_pred # Print a prediction so to have an idea of the Q-values magnitude
 		x_train = np.asarray(x_train).squeeze()
 		t_train = np.asarray(t_train).squeeze()
-		self.model.fit(x_train, t_train, batch_size=32, nb_epoch=1)
+		history = self.model.fit(x_train, t_train, batch_size=32, nb_epoch=1)
+		self.logger.to_csv('loss_history.csv', history.history['loss'])
 
 	def predict(self, state):
 		# Feed state into the model, return predicted Q-values
