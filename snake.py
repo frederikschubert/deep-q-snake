@@ -1,5 +1,5 @@
 from pygame.locals import *
-from PIL import Image
+from PIL import Image, ImageOps
 from DQAgent import DQAgent
 from Logger import Logger
 import numpy as np
@@ -10,7 +10,6 @@ import getopt
 import os
 
 ### CONSTANTS
-# Game constants
 HELP_MESSAGE = 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [-i num_iter] [-v] [-d]\n' \
 		   't, train: train the agent\n' \
 		   's, save: save the neural network when quitting\n' \
@@ -18,14 +17,16 @@ HELP_MESSAGE = 'Usage: snake.py [-t] [-s path/to/file.h5] [-l path/to/file.h5] [
 		   'i, iterations number: perform number training iterations before quitting\n' \
 		   'v, no-video: suppress video output (useful to train on headless servers)\n' \
 		   'd, debug: do not print anything to file and do not create the output folder\n'
+
+# Game constants
 STEP = 20
 APPLE_SIZE = 20
 SCREEN_SIZE = 300
 START_X = SCREEN_SIZE / 2 - 5 * STEP
 START_Y = SCREEN_SIZE / 2 - STEP
-BACKGROUND_COLOR = (0, 0, 0)
-SNAKE_COLOR = (255, 0, 0)
-APPLE_COLOR = (255, 255, 255)
+BACKGROUND_COLOR = (0,0,0)
+SNAKE_COLOR = (255,255,255)
+APPLE_COLOR = (255,255,255)
 ACTIONS = 4
 
 # Agent constants
@@ -40,6 +41,7 @@ save_path = ''
 load_path = ''
 remaining_iters = -1
 debug = False
+is_headless = False
 
 def init_snake():
 	# Restores the game to the intial state. Use thsi to reset the main game loop.
@@ -107,11 +109,14 @@ def die():
 
 def screenshot():
 	# Take a screenshot of the screen, convert it to greyscale, resize it to 60x60, convert it to matrix form
-	global s
+	global s, is_headless
 	data = pygame.image.tostring(s, 'RGB')  # Take screenshot
 	image = Image.fromstring('RGB', (SCREEN_SIZE, SCREEN_SIZE), data)  # Import it in PIL
 	image = image.convert('L')  # Convert to greyscale
 	image = image.resize(SCREENSHOT_DIMS)
+	image = ImageOps.invert(image) if is_headless else image # Don't ever, ever, ever ask why
+	image = image.convert('1')
+	image.save('ciao.png')
 	matrix = np.asarray(image.getdata(), dtype=np.float64).reshape(image.size[0], image.size[1])
 	return matrix
 
@@ -136,6 +141,8 @@ for opt, arg in opts:
 		remaining_iters = int(arg)
 	elif opt in ('-v', '--no-video'):
 		os.environ['SDL_VIDEODRIVER'] = 'dummy'
+		BACKGROUND_COLOR = (255,255,255) # Pygame acts weird on headless servers
+		is_headless = True
 	elif opt in ('-d', '--debug'):
 		debug = True
 
