@@ -115,7 +115,7 @@ parser.add_argument('-l', '--load', type=str, required=False, default='', help='
 parser.add_argument('-i', '--iterations', type=int, required=False, default=-1, help='perform ITERATIONS training iterations before quitting.')
 parser.add_argument('-v', '--novideo', action='store_true', help='suppress video output (useful to train on headless servers).')
 parser.add_argument('-d', '--debug', action='store_true', help='do not print anything to file and do not create the output folder.')
-parser.add_argument('--gamma', type=float, required=False, default=0.9, help='custom discount factor for the environment.')
+parser.add_argument('--gamma', type=float, required=False, default=0.95, help='custom discount factor for the environment.')
 parser.add_argument('--dropout', type=float, required=False, default=0.1, help='custom dropout rate for the Q-network.')
 parser.add_argument('--reward', type=str, required=False, default='N,-1,0', help='comma separated list with rewards for apple, death and life. Pass \'N\' as apple reward to use the current snake length.')
 args = parser.parse_args()
