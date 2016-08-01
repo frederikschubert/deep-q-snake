@@ -10,6 +10,7 @@ import sys
 import os
 
 ### CONSTANTS
+MAX_EPISODE_LENGTH_FACTOR = 100
 MAX_EPISODES_BETWEEN_TRAININGS = 1500
 # Game constants
 STEP = 20
@@ -265,5 +266,5 @@ while True: # Main game loop
 	# Poll the DQAgent to get the next action
 	action = DQA.get_action(np.asarray([state]), testing=must_test)
 
-	if must_die:
+	if must_die or episode_length > len(xs) * MAX_EPISODE_LENGTH_FACTOR: # Avoid infinite looping
 		die()
