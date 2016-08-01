@@ -25,11 +25,13 @@ python snake.py -h
 ```
 you'll see the options list. Possible options are:
 - **t, train**: train the Q-network periodically during the game. 
-- **s, save path/to/file.h5**: upon exiting, save the Q-network to a HDF5 file.
 - **l, load path/to/file.h5**: initialize the Q-network using the weights stored in the given HDF5 file.
 - **i, iterations number**: perform number training iterations before quitting.
 - **v, no-video**: suppress video output (useful to train on headless servers).
 - **d, debug**: do not print anything to file and do not create the output folder.  
+- **gamma**: set a custom value for the discount factor
+- **dropout**: set a custom value for the dropout probability of the Q-network
+- **reward**: set a custom reward function by passing a comma separated list with rewards for apple, death and life (pass 'N' as life reward to use the current snake lenght)
 
 ### Output
 Running the script with any combination of options will output some useful data collections to help you interpret the data.     

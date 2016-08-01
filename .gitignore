@@ -3,3 +3,4 @@ output/
 *png
 *pyc
 *.h5
+*.txt
