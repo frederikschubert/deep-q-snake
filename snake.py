@@ -213,14 +213,6 @@ while True: # Main game loop
 	elif action == 1 and dirs != 3: # right
 		dirs = 1
 
-	# Check if snake hit itself
-	i = len(xs) - 1
-	while i >= 2:
-		if collide(xs[0], xs[i], ys[0], ys[i], STEP, STEP, STEP, STEP):
-			must_die = True
-			reward = DEATH_REWARD  # Hit itself
-		i -= 1
-
 	# Check if snake ate apple
 	if collide(xs[0], applepos[0], ys[0], applepos[1], STEP, APPLE_SIZE, STEP, APPLE_SIZE):
 		score += 1
@@ -228,6 +220,14 @@ while True: # Main game loop
 		xs.append(700)
 		ys.append(700)
 		applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE))  # Ate apple
+
+	# Check if snake hit itself
+	i = len(xs) - 1
+	while i >= 2:
+		if collide(xs[0], xs[i], ys[0], ys[i], STEP, STEP, STEP, STEP):
+			must_die = True
+			reward = DEATH_REWARD  # Hit itself
+		i -= 1
 
 	# Check if snake collided with walls
 	if xs[0] < 0 or xs[0] > SCREEN_SIZE - APPLE_SIZE * 2 or ys[0] < 0 or ys[0] > SCREEN_SIZE - APPLE_SIZE * 2:
