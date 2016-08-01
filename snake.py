@@ -28,12 +28,13 @@ SCREENSHOT_DIMS = (84, 84)
 ### FUNCTIONS
 def init_snake():
 	# Restores the game to the intial state. Use thsi to reset the main game loop.
-	global xs, ys, dirs, score, episode_length, applepos, s, action, state, next_state, must_die
+	global xs, ys, dirs, score, episode_length, episode_reward, applepos, s, action, state, next_state, must_die
 	xs = [START_Y, START_Y, START_Y, START_Y, START_Y]
 	ys = [START_X + 5 * STEP, START_X + 4 * STEP, START_X + 3 * STEP, START_X + 2 * STEP, START_X]
 	dirs = random.choice([0, 1, 3])
 	score = 0
 	episode_length = 0
+	episode_reward = 0
 	must_die = False
 	applepos = (random.randint(0, SCREEN_SIZE - APPLE_SIZE), random.randint(0, SCREEN_SIZE - APPLE_SIZE))
 
@@ -59,7 +60,7 @@ def collide(x1, x2, y1, y2, w1, w2, h1, h2):
 		return False
 
 def die():
-	global logger, remaining_iters, score, episode_length, must_test, experience_buffer, exp_backup_counter, global_episode_counter
+	global logger, remaining_iters, score, episode_length, episode_reward, must_test, experience_buffer, exp_backup_counter, global_episode_counter
 	global_episode_counter += 1
 	# If agent is stuck, kill the process and save that precious AWS time
 	if global_episode_counter > MAX_EPISODES_BETWEEN_TRAININGS:
@@ -68,12 +69,12 @@ def die():
 		sys.exit(0)
 	# Before resetting must_test, save data about the testing episode
 	if must_test:
-		logger.to_csv('test_data.csv', [score, episode_length])
+		logger.to_csv('test_data.csv', [score, episode_length, episode_reward])
 		logger.log('Test episode - Score: ' + str(score) + '; steps: ' + str(episode_length))
 	must_test = False # Reset this every time (only one testing episode per training session)
 	if score >= 1 and episode_length >= 10:
 		print 'Adding episode to experience backup; score:', score, '; episode length:', episode_length
-		logger.to_csv('train_data.csv', [score, episode_length])
+		logger.to_csv('train_data.csv', [score, episode_length, episode_reward])
 		exp_backup_counter += len(experience_buffer)
 		print 'Collected', exp_backup_counter, 'experiences of', DQA.batch_size
 		for exp in experience_buffer:
@@ -81,7 +82,7 @@ def die():
 	# Train the network after a given number of transitions if the user requested training
 	if DQA.must_train() and args.train:
 		exp_backup_counter = 0
-		logger.log('Episodes completed to get the desired number of experience: %d' % (global_episode_counter))
+		logger.log('Episodes completed to get the desired number of experience: %d' % global_episode_counter)
 		global_episode_counter = 0
 		if remaining_iters == 0:
 			DQA.quit()
@@ -102,7 +103,7 @@ def screenshot():
 	image = Image.fromstring('RGB', (SCREEN_SIZE, SCREEN_SIZE), data) # Import it in PIL
 	image = image.convert('L')  # Convert to greyscale
 	image = image.resize(SCREENSHOT_DIMS)
-	image = ImageOps.invert(image) if is_headless else image # Don't ever, ever, ever ask why
+	image = ImageOps.invert(image) if is_headless else image # Don't ever, ever, EVER ask why
 	image = image.convert('1')
 	matrix = np.asarray(image.getdata(), dtype=np.float64).reshape(image.size[0], image.size[1])
 	return matrix
@@ -114,8 +115,8 @@ parser.add_argument('-l', '--load', type=str, required=False, default='', help='
 parser.add_argument('-i', '--iterations', type=int, required=False, default=-1, help='perform ITERATIONS training iterations before quitting.')
 parser.add_argument('-v', '--novideo', action='store_true', help='suppress video output (useful to train on headless servers).')
 parser.add_argument('-d', '--debug', action='store_true', help='do not print anything to file and do not create the output folder.')
-parser.add_argument('--alpha', type=float, required=False, default=0.01, help='custom learning rate for the Q-network.')
 parser.add_argument('--gamma', type=float, required=False, default=0.9, help='custom discount factor for the environment.')
+parser.add_argument('--dropout', type=float, required=False, default=0.1, help='custom dropout rate for the Q-network.')
 parser.add_argument('--reward', type=str, required=False, default='N,-1,0', help='comma separated list with rewards for apple, death and life. Pass \'N\' as apple reward to use the current snake length.')
 args = parser.parse_args()
 
@@ -141,13 +142,15 @@ logger.log({
 	'Reward death': DEATH_REWARD,
 	'Reward life': LIFE_REWARD
 })  # Two different writes so the rewards will be writtes sequentially to the file
-logger.to_csv('test_data.csv', ['Score,Episode length'])
-logger.to_csv('train_data.csv', ['Score,Episode length'])
+logger.to_csv('test_data.csv', ['Score,Episode length,Episode reward'])
+logger.to_csv('train_data.csv', ['Score,Episode length,Episode reward'])
 logger.to_csv('loss_history.csv', ['Loss'])
 
 ### AGENT
 DQA = DQAgent(
 	ACTIONS,
+	gamma=args.gamma,
+	dropout_prob=args.dropout,
 	load_path = args.load,
 	logger=logger
 )
@@ -156,6 +159,7 @@ experience_buffer = [] # This will store the SARS tuples at each episode
 ### STATS
 score = 0
 episode_length = 0
+episode_reward = 0
 episode_nb = 0
 exp_backup_counter = 0
 global_episode_counter = 0 # Keeps track of how many episodes there were between traning iterations
@@ -255,6 +259,7 @@ while True: # Main game loop
 	next_state[1] = screenshot()
 	# Add SARS tuple to experience_buffer
 	experience_buffer.append((np.asarray([state]), action, reward, np.asarray([next_state]), True if must_die else False))
+	episode_reward += reward
 	# Change current state
 	state = list(next_state)
 	# Poll the DQAgent to get the next action

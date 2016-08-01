@@ -9,6 +9,7 @@ class DQAgent:
 				 batch_size = 1024,
 				 alpha = 0.01,
 				 gamma = 0.9,
+				 dropout_prob = 0.1,
 				 epsilon = 1,
 				 epsilon_rate = 0.99,
 				 network_input_shape = (2,84,84),
@@ -19,7 +20,6 @@ class DQAgent:
 		# Training parameters
 		self.batch_size = batch_size
 		# Hyperparameters
-		self.alpha = alpha  # Learning rate (The Adam optimizer paper suggests 0.001 as default)
 		self.gamma = gamma  # Discount factor
 		self.epsilon = epsilon  # Coefficient for epsilon-greedy exploration
 		self.epsilon_rate = epsilon_rate  # (inverse) Rate at which to make epsilon smaller, as training improves the agent's performance; epsilon = epsilon * rate
@@ -32,15 +32,16 @@ class DQAgent:
 		self.DCN = DQNetwork(
 			self.actions,
 			network_input_shape,
-			alpha = self.alpha,
+			alpha = alpha,
 			gamma = self.gamma,
+			dropout_prob=dropout_prob,
 			load_path = load_path,
 			logger=logger
 		)
 
 		if logger is not None:
 			logger.log({
-				'Learning rate' : self.alpha,
+				'Learning rate' : alpha,
 				'Discount factor' : self.gamma,
 				'Starting epsilon' : self.epsilon,
 				'Epsilon decrease rate' : self.epsilon_rate,
