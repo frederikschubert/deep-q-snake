@@ -1,7 +1,7 @@
 # Playing Snake with Deep Q-Learning by Daniele Grattarola
 This is an implementation in Keras and Pygame of deep Q-learning applied to Snake. 
 Rather than a pre-packaged tool to simply see the agent playing the game, this is a model that needs to be trained and fine tuned by hand and has more of an educational value.   
-The code used to play the game has been adapted from [this 35 LOC example](http://pygame.org/project-Snake+in+35+lines-818-.html).  
+The code used to play the game has been adapted from [this 35 LOC example](http://pygame.org/project-Snake+in+35+lines-818-.html).   
 
 You can find a detailed explanation of the project and a summary of some experiments that I run with this code [here](http://exsubstantia.com/machine/Learning%20to%20play%20Snake%20with%20Deep%20Q-Learning.pdf).  
 **Please remember to cite me if you ever use any of this code and documents for your work.**
