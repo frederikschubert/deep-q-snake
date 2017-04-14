@@ -190,7 +190,7 @@ rewards = args.reward.split(',')
 if rewards[0] is 'N':
     APPLE_REWARD = None
 else:
-    APPLE_REWARD = rewards[0]
+    APPLE_REWARD = float(rewards[0])
 DEATH_REWARD = float(rewards[1])
 LIFE_REWARD = float(rewards[2])
 
