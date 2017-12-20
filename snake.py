@@ -138,23 +138,18 @@ def die():
 
 
 def screenshot():
-    """
-    Takes a screenshot of the game, converts it to greyscale, resizes it to
-    60x60 and returns it as np.array
-    :return:
-    """
-    global s, is_headless
-    data = pygame.image.tostring(s, 'RGB')  # Take screenshot
-    image = Image.frombytes('RGB', (SCREEN_SIZE, SCREEN_SIZE), data)
-    image = image.convert('L')  # Convert to greyscale
-    image = image.resize(SCREENSHOT_DIMS)  # Resize
-    image = ImageOps.invert(image) if is_headless else image  # TODO ???
-    image = image.convert('1')
-    matrix = np.asarray(image.getdata(), dtype=np.float64)
-    return matrix.reshape(image.size[0], image.size[1])
+	# Take a screenshot of the screen, convert it to greyscale, resize it to 60x60, convert it to matrix form
+	global s, is_headless
+	data = pygame.image.tostring(s, 'RGB')  # Take screenshot
+	image = Image.frombytes('RGB', (SCREEN_SIZE, SCREEN_SIZE), data) # Import it in PIL
+	image = image.convert('L')  # Convert to greyscale
+	image = image.resize(SCREENSHOT_DIMS)
+	image = ImageOps.invert(image) if is_headless else image # Don't ever, ever, EVER ask why
+	image = image.convert('1')
+	matrix = np.asarray(image.getdata(), dtype=np.float64).reshape(image.size[0], image.size[1])
+	return matrix
 
-
-# ARGUMENTS
+### ARGUMENTS
 parser = argparse.ArgumentParser()
 parser.add_argument('-t', '--train', action='store_true',
                     help='train the agent')

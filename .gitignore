@@ -6,3 +6,4 @@ output/
 *.txt
 *.zip
 *.pdf
+.vscode
